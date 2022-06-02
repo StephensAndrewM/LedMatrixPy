@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
+
 from drawing import PixelGrid
 
+
 class AbstractSlide(ABC):
-    
+
     def initialize(self):
         pass
-    
+
     def terminate(self):
         pass
 
@@ -17,7 +19,7 @@ class AbstractSlide(ABC):
 
     def stop_draw(self):
         pass
-    
+
     @abstractmethod
     def draw(self) -> PixelGrid:
         pass

@@ -8,3 +8,7 @@ __pycache__/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Debugging directories
+render/*
+debug/*

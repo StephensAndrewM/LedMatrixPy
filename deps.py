@@ -1,6 +1,7 @@
 import abc
 
-from timesource import TimeSource, SystemTimeSource
+from timesource import SystemTimeSource, TimeSource
+
 
 class Dependencies:
     def GetTimeSource(self) -> TimeSource:
