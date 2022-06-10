@@ -1,6 +1,6 @@
 from re import L
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw  # type: ignore
 
 from constants import GRID_HEIGHT, GRID_WIDTH
 from drawing import Color, PixelGrid
@@ -10,7 +10,7 @@ DOT_PADDING = 2
 MIN_BRIGHTNESS = 40
 
 
-def write_grid_to_file(name: str, grid: PixelGrid):
+def write_grid_to_file(name: str, grid: PixelGrid) -> None:
     width = (GRID_WIDTH * RENDER_SCALE) + DOT_PADDING
     height = (GRID_HEIGHT * RENDER_SCALE) + DOT_PADDING
     img = Image.new('RGB', (width, height))

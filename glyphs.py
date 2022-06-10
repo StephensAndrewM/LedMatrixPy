@@ -55,7 +55,7 @@ SPACE_GLYPH = Glyph([
 GLYPH_SET[" "] = SPACE_GLYPH
 
 
-def load_glyphs():
+def load_glyphs() -> None:
     script_dir = path.dirname(path.realpath(__file__))
     glyph_dir = path.join(script_dir, "symbols/glyphs/")
     glyph_files = [f for f in listdir(

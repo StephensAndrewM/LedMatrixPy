@@ -1,6 +1,8 @@
 import enum
 from typing import List, Optional, Tuple
 
+from PIL import Image  # type: ignore
+
 from constants import GRID_HEIGHT, GRID_WIDTH
 from glyphs import GLYPH_SET, Glyph
 
@@ -16,7 +18,7 @@ class Color:
     g: int
     b: int
 
-    def __init__(self, r=0, g=0, b=0):
+    def __init__(self, r: int = 0, g: int = 0, b: int = 0) -> None:
         self.r = r
         self.g = g
         self.b = b
@@ -38,15 +40,15 @@ YELLOW = Color(255, 255, 0)
 class PixelGrid:
     pixels: List[List[Color]]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.pixels = [[Color() for x in range(0, GRID_WIDTH)]
                        for y in range(0, GRID_HEIGHT)]
 
-    def set(self, x: int, y: int, c: Color):
+    def set(self, x: int, y: int, c: Color) -> None:
         if x >= 0 and x < GRID_WIDTH and y >= 0 and y < GRID_HEIGHT:
             self.pixels[y][x] = c
 
-    def draw_string(self, text: str, x: int, y: int, align: Align, c: Color, max_width: Optional[int] = None):
+    def draw_string(self, text: str, x: int, y: int, align: Align, c: Color, max_width: Optional[int] = None) -> None:
         # Collect the glpyhs that make up the input text string.
         # Stop retrieving them if we exceed the max draw size.
         text_as_glyphs: List[Glyph] = []
@@ -77,8 +79,15 @@ class PixelGrid:
             self.draw_glyph(glyph, originX+offsetX, y, c)
             offsetX += glyph.width() + 1
 
-    def draw_glyph(self, glyph: Glyph, x: int, y: int, c: Color):
+    def draw_glyph(self, glyph: Glyph, x: int, y: int, c: Color) -> None:
         for j, row in enumerate(glyph.layout):
             for i, enabled in enumerate(row):
                 if enabled:
                     self.set(x+i, y+j, c)
+
+    def as_image(self) -> Image:
+        img = Image.new('RGB', (GRID_WIDTH, GRID_HEIGHT))
+        for j, row in enumerate(self.pixels):
+            for i, pixel in enumerate(row):
+                img.putpixel((i, j), pixel.to_tuple())
+        return img

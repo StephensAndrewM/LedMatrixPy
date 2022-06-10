@@ -16,7 +16,7 @@ SCREEN_WIDTH = 128
 SCREEN_HEIGHT = 32
 
 
-def main():
+def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -24,7 +24,7 @@ def main():
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
     if args.debug_log:
-        logging.setLevel(logging.DEBUG)
+        logging.StreamHandler().setLevel(logging.DEBUG)
 
     if args.generate_images:
         generate_images()
@@ -32,13 +32,13 @@ def main():
         run_slideshow()
 
 
-def generate_images():
+def generate_images() -> None:
     deps = Dependencies()
     slide = TimeSlide(deps)
     write_grid_to_file("TimeSlide", slide.draw())
 
 
-def run_slideshow():
+def run_slideshow() -> None:
     pass
 
 

@@ -8,7 +8,7 @@ class TimeSlide(AbstractSlide):
     time_source: TimeSource
 
     def __init__(self, deps: Dependencies):
-        self.time_source = deps.GetTimeSource()
+        self.time_source = deps.get_time_source()
 
     def draw(self) -> PixelGrid:
         grid = PixelGrid()
