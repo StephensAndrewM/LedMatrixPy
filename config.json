@@ -1,0 +1,8 @@
+{
+    "slide_advance": 15,
+    "slides": [
+        {
+            "type": "TimeSlide"
+        },
+    ]
+}

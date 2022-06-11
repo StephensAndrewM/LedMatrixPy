@@ -1,8 +1,14 @@
 import argparse
 import logging
+from time import sleep
+from typing import List
 
+from abstractslide import AbstractSlide
+from config import Config, load_config
 from deps import Dependencies
+from display import Display
 from imagewriter import write_grid_to_file
+from slideshow import Slideshow
 from timeslide import TimeSlide
 
 parser = argparse.ArgumentParser(description='Run an LED Matrix slideshow.')
@@ -39,7 +45,24 @@ def generate_images() -> None:
 
 
 def run_slideshow() -> None:
-    pass
+    config = load_config()
+    deps = Dependencies()
+    slides = create_slides_from_config(config, deps)
+    display = Display()
+    slideshow = Slideshow(config, display, deps.get_requester(), slides)
+
+    # Run forever
+    sleep(1000)
+
+
+def create_slides_from_config(config: Config, deps: Dependencies) -> List[AbstractSlide]:
+    slides: List[AbstractSlide] = []
+    for slide_config in config["slides"]:
+        if slide_config["type"] == "TimeSlide":
+            slides.append(TimeSlide(deps))
+        else:
+            logging.warning("Unknown slide type %s", slide_config["type"])
+    return slides
 
 
 if __name__ == "__main__":
