@@ -9,6 +9,11 @@ __pycache__/
 .dmypy.json
 dmypy.json
 
+
+# C++ bindings for matrix hardware
+bindings/
+
+
 # Debugging directories
 render/*
 debug/*
