@@ -77,6 +77,8 @@ class Slideshow:
             self.redraw_timer.cancel()
             self.redraw_timer.join()
 
+        self.requester.stop()
+
     def freeze(self) -> None:
         if self.advance_timer is not None:
             self.advance_timer.cancel()

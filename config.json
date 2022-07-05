@@ -3,6 +3,13 @@
     "slides": [
         {
             "type": "TimeSlide"
+        },
+        {
+            "type": "WeatherSlide",
+            "options": {
+                "observations_office": "KBOS",
+                "forecast_office": "BOX/69,76"
+            }
         }
     ]
 }

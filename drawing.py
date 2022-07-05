@@ -85,6 +85,12 @@ class PixelGrid:
                 if enabled:
                     self.set(x+i, y+j, c)
 
+    def draw_error(self, title: str, message: str) -> None:
+        self.draw_string(title, int(GRID_WIDTH/2), 8,
+                         Align.CENTER, WHITE, GRID_WIDTH)
+        self.draw_string(message, int(GRID_WIDTH/2), 16,
+                         Align.CENTER, RED, GRID_WIDTH)
+
     def as_image(self) -> Image:
         img = Image.new('RGB', (GRID_WIDTH, GRID_HEIGHT))
         for j, row in enumerate(self.pixels):

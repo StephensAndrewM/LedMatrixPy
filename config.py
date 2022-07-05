@@ -4,7 +4,7 @@ from typing import Dict, List, TypedDict
 
 _SlideConfig = TypedDict('_SlideConfig', {
     "type": str,
-    "config": Dict[str, str]
+    "options": Dict[str, str]
 })
 
 Config = TypedDict('Config', {

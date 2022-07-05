@@ -1,37 +1,39 @@
+from abc import ABC, abstractmethod
+import logging
 import threading
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Callable, List
+import time
+from typing import Callable, Dict, List
 
 import requests
+
+
+_LOG_REQUESTS = True
 
 
 @dataclass
 class Endpoint:
     url: str
+    name: str
     refresh_interval: timedelta
-    parser: Callable[[str], bool]
+    parse_callback: Callable[[requests.models.Response], bool]
     error_callback: Callable[[requests.models.Response], None]
+    headers: Dict[str, str]
 
 
-class Requester:
-    def __init__(self) -> None:
-        self.configured_endpoints: List[Endpoint] = []
-        self.threads: List[RequesterThread] = []
-
+class Requester(ABC):
+    @abstractmethod
     def add_endpoint(self, endpoint: Endpoint) -> None:
-        self.configured_endpoints.append(endpoint)
+        pass
 
+    @abstractmethod
     def start(self) -> None:
-        self.threads = [RequesterThread(endpoint)
-                        for endpoint in self.configured_endpoints]
-        for t in self.threads:
-            t.start()
+        pass
 
+    @abstractmethod
     def stop(self) -> None:
-        for t in self.threads:
-            t.stop()
-        self.threads = []
+        pass
 
 
 class RequesterThread:
@@ -44,6 +46,7 @@ class RequesterThread:
         self.failures_without_success = 0
 
     def start(self) -> None:
+        logging.debug("Starting requests to %s", self.endpoint.name)
         self.request_with_retries()
 
     def stop(self) -> None:
@@ -51,13 +54,21 @@ class RequesterThread:
             self.timer.cancel()
 
     def request_with_retries(self) -> None:
-        response = requests.get(self.endpoint.url)
+        response = requests.get(
+            self.endpoint.url, headers=self.endpoint.headers)
+        logging.debug("Got response from URL", response)
+
         if response.status_code != 200:
             self.failures_without_success += 1
             self.endpoint.error_callback(response)
+            logging.warning("Error %d from endpoint %s. Url: %s, response: %s",
+                            response.status_code, self.endpoint.name, self.endpoint.url, response.content)
             self.schedule_retry()
+            return
 
-        parse_success = self.endpoint.parser(response.text)
+        self._log_to_file(response)
+
+        parse_success = self.endpoint.parse_callback(response)
         if parse_success:
             self.failures_without_success = 0
             self.timer = threading.Timer(
@@ -74,3 +85,33 @@ class RequesterThread:
             wait_time = 30
 
         self.timer = threading.Timer(wait_time, self.request_with_retries)
+
+    def _log_to_file(self, content: requests.models.Response) -> None:
+        if _LOG_REQUESTS:
+            filename = "debug/%d_%s.txt" % (int(time.time()),
+                                            self.endpoint.name)
+            with open(filename, 'w') as f:
+                f.write(content.content.decode('utf-8'))
+
+
+class HttpRequester(Requester):
+    configured_endpoints: List[Endpoint]
+    threads: List[RequesterThread]
+
+    def __init__(self) -> None:
+        self.configured_endpoints = []
+        self.threads = []
+
+    def add_endpoint(self, endpoint: Endpoint) -> None:
+        self.configured_endpoints.append(endpoint)
+
+    def start(self) -> None:
+        self.threads = [RequesterThread(endpoint)
+                        for endpoint in self.configured_endpoints]
+        for t in self.threads:
+            t.start()
+
+    def stop(self) -> None:
+        for t in self.threads:
+            t.stop()
+        self.threads = []

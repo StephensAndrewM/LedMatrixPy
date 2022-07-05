@@ -5,11 +5,13 @@ from typing import List
 
 from abstractslide import AbstractSlide
 from config import Config, load_config
+from controller import Controller
 from deps import Dependencies
 from display import Display
 from imagewriter import write_grid_to_file
 from slideshow import Slideshow
 from timeslide import TimeSlide
+from weatherslide import WeatherSlide
 
 parser = argparse.ArgumentParser(description='Run an LED Matrix slideshow.')
 parser.add_argument('--generate_images', action='store_true',
@@ -30,7 +32,7 @@ def main() -> None:
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
     if args.debug_log:
-        logging.StreamHandler().setLevel(logging.DEBUG)
+        logging.getLogger().setLevel(logging.DEBUG)
 
     if args.generate_images:
         generate_images()
@@ -40,8 +42,10 @@ def main() -> None:
 
 def generate_images() -> None:
     deps = Dependencies()
-    slide = TimeSlide(deps)
-    write_grid_to_file("TimeSlide", slide.draw())
+    slide = WeatherSlide(deps, {})
+    deps.get_requester().start()
+    sleep(10)
+    write_grid_to_file("WeatherSlide", slide.draw())
 
 
 def run_slideshow() -> None:
@@ -51,15 +55,19 @@ def run_slideshow() -> None:
     display = Display()
     slideshow = Slideshow(config, display, deps.get_requester(), slides)
 
-    # Run forever
-    sleep(1000)
+    controller = Controller(slideshow)
+    controller.run_until_shutdown()
 
 
 def create_slides_from_config(config: Config, deps: Dependencies) -> List[AbstractSlide]:
     slides: List[AbstractSlide] = []
     for slide_config in config["slides"]:
-        if slide_config["type"] == "TimeSlide":
+        type = slide_config["type"]
+        options = slide_config["options"]
+        if type == "TimeSlide":
             slides.append(TimeSlide(deps))
+        elif type == "WeatherSlide":
+            slides.append(WeatherSlide(deps, options))
         else:
             logging.warning("Unknown slide type %s", slide_config["type"])
     return slides
