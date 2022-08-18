@@ -36,7 +36,9 @@ class ControllerServer(HTTPServer):
     stopped: bool
 
     def __init__(self, slideshow: Slideshow) -> None:
-        super(("localhost", 5000), ControllerRequestHandler)
+        super(ControllerServer, self).__init__(
+            ("localhost", 5000), ControllerRequestHandler
+        )
         self.slideshow = slideshow
         self.stopped = False
 

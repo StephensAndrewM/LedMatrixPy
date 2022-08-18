@@ -20,3 +20,6 @@ class Display:
 
     def draw(self, grid: PixelGrid) -> None:
         self.matrix.SetImage(grid.as_image())
+
+    def clear(self) -> None:
+        self.matrix.Clear()
