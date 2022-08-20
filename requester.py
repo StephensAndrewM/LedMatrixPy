@@ -9,7 +9,7 @@ from typing import Callable, Dict, List
 import requests
 
 
-_LOG_REQUESTS = True
+_LOG_REQUESTS = False
 
 
 @dataclass

@@ -12,10 +12,12 @@ class Display:
         options.cols = 64
         options.chain_length = 2
         options.pwm_bits = 11
-        options.pwm_lsb_nanoseconds = 250
-        options.brightness = 50
+        options.brightness = 40
         options.show_refresh_rate = False
-        options.hardware_mapping = 'adafruit-hat'
+        options.limit_refresh_rate_hz = 120
+        # Sudo is needed to call ntpdate
+        options.drop_privileges = False
+        options.hardware_mapping = 'adafruit-hat-pwm'
         self.matrix = RGBMatrix(options=options)
 
     def draw(self, grid: PixelGrid) -> None:
