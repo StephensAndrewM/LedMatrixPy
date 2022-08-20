@@ -166,7 +166,7 @@ class WeatherSlide(AbstractSlide):
 
             self.forecast1 = DailyForecast(
                 date=now,
-                icon=self._icon_url_to_weather_glyph(forecast_tonight.icon),
+                icon=self._icon_url_to_weather_glyph(forecast_today.icon),
                 high_temp=forecast_today.temperature,
                 low_temp=forecast_tonight.temperature)
 

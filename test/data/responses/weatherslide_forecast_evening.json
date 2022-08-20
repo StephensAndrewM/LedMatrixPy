@@ -9,7 +9,7 @@
             "endTime": "2022-05-24T06:00:00-04:00",
             "temperature": 57,
             "temperatureUnit": "F",
-            "icon": "https://api.weather.gov/icons/land/night/bkn?size=medium"
+            "icon": "https://api.weather.gov/icons/land/night/few?size=medium"
         },
         {
             "number": 2,
@@ -18,7 +18,7 @@
             "endTime": "2022-05-24T18:00:00-04:00",
             "temperature": 63,
             "temperatureUnit": "F",
-            "icon": "https://api.weather.gov/icons/land/day/sct?size=medium"
+            "icon": "https://api.weather.gov/icons/land/day/skc?size=medium"
         },
         {
             "number": 3,
@@ -27,7 +27,7 @@
             "endTime": "2022-05-25T06:00:00-04:00",
             "temperature": 52,
             "temperatureUnit": "F",
-            "icon": "https://api.weather.gov/icons/land/night/sct?size=medium"
+            "icon": "https://api.weather.gov/icons/land/night/skc?size=medium"
         }
     ]
 }
