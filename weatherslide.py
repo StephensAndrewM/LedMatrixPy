@@ -248,7 +248,7 @@ class WeatherSlide(AbstractSlide):
             grid.draw_string("NOW", 21, 0, Align.CENTER, YELLOW)
             grid.draw_string("?", 21, 16, Align.CENTER, RED)
         else:
-            self._draw_weather_box(grid, 21, "NOW", YELLOW, "%d" %
+            self._draw_weather_box(grid, 21, "NOW", YELLOW, "%d°" %
                                    self.current_temp, self.current_icon)
 
         if self.forecast1 is not None and self.forecast2 is not None:
@@ -263,10 +263,10 @@ class WeatherSlide(AbstractSlide):
     def _draw_forecast(self, grid: PixelGrid, x: int, forecast: DailyForecast) -> None:
         forecast_date = forecast.date.strftime("%a").upper()
         if forecast.high_temp is not None:
-            forecast_temp = "%d/%d" % (forecast.high_temp,
+            forecast_temp = "%d°/%d°" % (forecast.high_temp,
                                        forecast.low_temp)
         else:
-            forecast_temp = "%d" % (forecast.low_temp)
+            forecast_temp = "%d°" % (forecast.low_temp)
         self._draw_weather_box(
             grid, x, forecast_date, WHITE, forecast_temp, forecast.icon)
 
