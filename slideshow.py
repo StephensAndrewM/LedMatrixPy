@@ -1,6 +1,11 @@
+import logging
+import subprocess
+import time
 from datetime import timedelta
 from threading import Timer
 from typing import List, Optional
+
+import requests
 
 from abstractslide import AbstractSlide
 from config import Config
@@ -39,7 +44,9 @@ class Slideshow:
         # Draw the welcome slide while waiting for data
         self.display.draw(WelcomeImage())
 
-        # TODO: Perform system checks
+        # Do some initial requests to cover for hardware limitations.
+        self._wait_for_network()
+        self._sync_system_time()
 
         # Starts data requesting loop, returning once initial requests are complete.
         self.requester.start()
@@ -90,6 +97,28 @@ class Slideshow:
     def unfreeze(self) -> None:
         if self.advance_timer is not None and not self.advance_timer.isAlive():
             self.advance()
+
+    def _wait_for_network(self) -> None:
+        attempts = 1
+        while True:
+            try:
+                response = requests.get(
+                    "http://clients3.google.com/generate_204")
+                if response.status_code == 204:
+                    logging.info(
+                        "Internet connection present after %d checks", attempts)
+                    return
+            except Exception as e:
+                logging.debug("Exception while checking for connection: %s", e)
+            finally:
+                attempts += 1
+                time.sleep(5)
+
+    def _sync_system_time(self) -> None:
+        p = subprocess.run(["/usr/sbin/ntpdate", "-s", "time.google.com"])
+        if p.returncode != 0:
+            logging.warning(
+                "Failed NTP time synchronization with exit code %d", p.returncode)
 
 
 def WelcomeImage() -> PixelGrid:

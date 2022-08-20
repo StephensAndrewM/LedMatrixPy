@@ -9,6 +9,7 @@ make build-python PYTHON=$(command -v python3)
 sudo make install-python PYTHON=$(command -v python3)
 sudo apt install python3-pil
 sudo apt install libopenjp2-7
+sudo apt install ntpdate
 mkdir debug
 chmod 777 debug
 ```
