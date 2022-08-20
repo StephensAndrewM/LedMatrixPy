@@ -62,8 +62,9 @@ def run_slideshow() -> None:
 def create_slides_from_config(config: Config, deps: Dependencies) -> List[AbstractSlide]:
     slides: List[AbstractSlide] = []
     for slide_config in config["slides"]:
-        type = slide_config["type"]
-        options = slide_config["options"]
+        type = slide_config.get("type", "")
+        options = slide_config.get("options", {})
+
         if type == "TimeSlide":
             slides.append(TimeSlide(deps))
         elif type == "WeatherSlide":

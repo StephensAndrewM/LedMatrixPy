@@ -48,6 +48,7 @@ class Slideshow:
 
     def advance(self) -> None:
         self.advance_timer = Timer(self.advance_interval.seconds, self.advance)
+        self.advance_timer.start()
 
         if self.redraw_timer is not None:
             self.redraw_timer.cancel()
@@ -64,6 +65,7 @@ class Slideshow:
 
     def redraw(self) -> None:
         self.redraw_timer = Timer(self.redraw_interval.seconds, self.redraw)
+        self.redraw_timer.start()
 
         grid = self.slides[self.current_slide_id].draw()
         self.display.draw(grid)
@@ -77,6 +79,7 @@ class Slideshow:
             self.redraw_timer.cancel()
             self.redraw_timer.join()
 
+        self.display.clear()
         self.requester.stop()
 
     def freeze(self) -> None:
