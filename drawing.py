@@ -1,4 +1,5 @@
 import enum
+import logging
 from typing import List, Optional, Tuple
 
 from PIL import Image  # type: ignore
@@ -55,7 +56,7 @@ class PixelGrid:
         text_glyph_width = 0
         for i in range(0, len(text)):
             if text[i] not in GLYPH_SET:
-                print("Unknown glyph: %s" % text[i])
+                logging.debug("Glyph %s not in global glyph set", text[i])
             glyph = GLYPH_SET[text[i]]
             text_glyph_width += glyph.width() + 1
             if max_width is not None and text_glyph_width > max_width:
@@ -78,6 +79,12 @@ class PixelGrid:
         for glyph in text_as_glyphs:
             self.draw_glyph(glyph, originX+offsetX, y, c)
             offsetX += glyph.width() + 1
+
+    def draw_glyph_by_name(self, glyph_name: str, x: int, y: int, c: Color) -> None:
+        if glyph_name not in GLYPH_SET:
+            logging.debug("Glyph %s not in global glyph set", glyph_name)
+            return
+        return self.draw_glyph(GLYPH_SET[glyph_name], x, y, c)
 
     def draw_glyph(self, glyph: Glyph, x: int, y: int, c: Color) -> None:
         for j, row in enumerate(glyph.layout):

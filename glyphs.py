@@ -10,11 +10,7 @@ class Glyph:
     layout: List[List[bool]]
 
     def __init__(self, data: List[str]):
-        if (len(data[0]) > 1):
-            raise ValueError(
-                'Char file contains invalid first line %s' % data[0])
         self.char = data[0]
-
         self.layout = []
         for j, line in enumerate(data[1:]):
             self.layout.append([self._charToBool(c) for c in line])
@@ -55,9 +51,9 @@ SPACE_GLYPH = Glyph([
 GLYPH_SET[" "] = SPACE_GLYPH
 
 
-def load_glyphs() -> None:
+def _load_glyphs(subdir: str) -> None:
     script_dir = path.dirname(path.realpath(__file__))
-    glyph_dir = path.join(script_dir, "symbols/glyphs/")
+    glyph_dir = path.join(script_dir, subdir)
     glyph_files = [f for f in listdir(
         glyph_dir) if path.isfile(path.join(glyph_dir, f))]
     for glyph_file in glyph_files:
@@ -67,4 +63,9 @@ def load_glyphs() -> None:
             GLYPH_SET[glyph.char] = glyph
 
 
-load_glyphs()
+_load_glyphs("symbols/glyphs/")
+_load_glyphs("symbols/weather_onebit/")
+
+
+def glyph_exists(glyph: str) -> bool:
+    return glyph in GLYPH_SET
