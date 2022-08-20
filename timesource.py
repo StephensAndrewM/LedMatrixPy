@@ -10,4 +10,4 @@ class TimeSource(ABC):
 
 class SystemTimeSource(TimeSource):
     def now(self) -> datetime.datetime:
-        return datetime.datetime.now()
+        return datetime.datetime.now().astimezone()

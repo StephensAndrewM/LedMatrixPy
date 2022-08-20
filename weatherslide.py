@@ -104,11 +104,10 @@ class WeatherSlide(AbstractSlide):
             update_time = datetime.datetime.fromisoformat(data["updateTime"])
         except ValueError:
             logging.warning(
-                "Could not parse forecast update time %s", data["update_time"])
+                "Could not parse forecast update time %s", data["updateTime"])
             return False
 
         now = self.time_source.now()
-        local_timezone = now.astimezone().tzinfo
 
         if now - update_time > datetime.timedelta(hours=6):
             logging.warning(
@@ -120,7 +119,7 @@ class WeatherSlide(AbstractSlide):
         if forecast_tonight is None:
             return False
 
-        if self.time_source.now().hour < 18:
+        if now.hour < 18:
             forecast_today = self._get_forecast_with_end_time(
                 0, 18, data["periods"])
             if forecast_today is None:
