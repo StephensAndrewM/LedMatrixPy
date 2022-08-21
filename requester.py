@@ -56,7 +56,6 @@ class RequesterThread:
     def request_with_retries(self) -> None:
         response = requests.get(
             self.endpoint.url, headers=self.endpoint.headers)
-        logging.debug("Got response from URL", response)
 
         if response.status_code != 200:
             self.failures_without_success += 1
@@ -73,6 +72,7 @@ class RequesterThread:
             self.failures_without_success = 0
             self.timer = threading.Timer(
                 self.endpoint.refresh_interval.seconds, self.request_with_retries)
+            self.timer.start()
         else:
             self.failures_without_success += 1
             self.schedule_retry()
@@ -85,6 +85,7 @@ class RequesterThread:
             wait_time = 30
 
         self.timer = threading.Timer(wait_time, self.request_with_retries)
+        self.timer.start()
 
     def _log_to_file(self, content: requests.models.Response) -> None:
         if _LOG_REQUESTS:
