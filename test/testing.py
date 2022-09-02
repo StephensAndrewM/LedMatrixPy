@@ -48,7 +48,7 @@ class FakeRequester(Requester):
         with open("test/data/responses/" + file) as f:
             response = requests.models.Response()
             response.status_code = 200
-            response._content = str.encode(f.read())
+            response._content = str.encode(f.read()) # type: ignore
             self.expected_responses[url] = response
 
 

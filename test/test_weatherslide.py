@@ -36,7 +36,7 @@ class WeatherSlideTest(unittest.TestCase):
 
     def test_render_afternoon(self) -> None:
         test_datetime = datetime.datetime(
-            2022, 6, 18, 15, 31, 0, 0, tz.gettz("America/New_York"))
+            2022, 6, 30, 15, 31, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(test_datetime)
 
         self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
@@ -61,7 +61,7 @@ class WeatherSlideTest(unittest.TestCase):
 
     def test_render_observations_error(self) -> None:
         test_datetime = datetime.datetime(
-            2022, 6, 18, 15, 31, 0, 0, tz.gettz("America/New_York"))
+            2022, 6, 30, 15, 31, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(test_datetime)
 
         self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
@@ -82,7 +82,7 @@ class WeatherSlideTest(unittest.TestCase):
 
     def test_render_null_current_temp(self) -> None:
         test_datetime = datetime.datetime(
-            2022, 6, 18, 15, 31, 0, 0, tz.gettz("America/New_York"))
+            2022, 6, 30, 15, 31, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(test_datetime)
 
         self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,

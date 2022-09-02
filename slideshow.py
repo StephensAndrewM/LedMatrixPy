@@ -60,6 +60,7 @@ class Slideshow:
         if self.redraw_timer is not None:
             self.redraw_timer.cancel()
             self.redraw_timer.join()
+            self.redraw_timer = None
 
         # One slide must always be enabled to prevent an infinite loop.
         while True:
@@ -82,9 +83,11 @@ class Slideshow:
         if self.advance_timer is not None:
             self.advance_timer.cancel()
             self.advance_timer.join()
+            self.advance_timer = None
         if self.redraw_timer is not None:
             self.redraw_timer.cancel()
             self.redraw_timer.join()
+            self.redraw_timer = None
 
         self.display.clear()
         self.requester.stop()
@@ -93,6 +96,7 @@ class Slideshow:
         if self.advance_timer is not None:
             self.advance_timer.cancel()
             self.advance_timer.join()
+            self.advance_timer = None
 
     def unfreeze(self) -> None:
         if self.advance_timer is not None and not self.advance_timer.isAlive():

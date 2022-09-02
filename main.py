@@ -19,10 +19,6 @@ parser.add_argument('--generate_images', action='store_true',
 parser.add_argument('--debug_log', action='store_true',
                     help='Prints debug-level logging information.')
 
-# Size of the matrix display.
-SCREEN_WIDTH = 128
-SCREEN_HEIGHT = 32
-
 
 def main() -> None:
     args = parser.parse_args()

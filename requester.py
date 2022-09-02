@@ -4,7 +4,7 @@ import threading
 from dataclasses import dataclass
 from datetime import timedelta
 import time
-from typing import Callable, Dict, List
+from typing import Dict, List, Optional, Protocol
 
 import requests
 
@@ -12,13 +12,23 @@ import requests
 _LOG_REQUESTS = False
 
 
+class ParseCallback(Protocol):
+    def __call__(self, response: requests.models.Response) -> bool:
+        pass
+
+
+class ErrorCallback(Protocol):
+    def __call__(self, response: Optional[requests.models.Response]) -> None:
+        pass
+
+
 @dataclass
 class Endpoint:
     url: str
     name: str
     refresh_interval: timedelta
-    parse_callback: Callable[[requests.models.Response], bool]
-    error_callback: Callable[[requests.models.Response], None]
+    parse_callback: ParseCallback
+    error_callback: ErrorCallback
     headers: Dict[str, str]
 
 
@@ -54,18 +64,26 @@ class RequesterThread:
             self.timer.cancel()
 
     def request_with_retries(self) -> None:
-        response = requests.get(
-            self.endpoint.url, headers=self.endpoint.headers)
-
-        if response.status_code != 200:
+        try:
+            response = requests.get(
+                self.endpoint.url, headers=self.endpoint.headers)
+        except Exception as e:
             self.failures_without_success += 1
-            self.endpoint.error_callback(response)
-            logging.warning("Error %d from endpoint %s. Url: %s, response: %s",
-                            response.status_code, self.endpoint.name, self.endpoint.url, response.content)
+            self.endpoint.error_callback(None)
+            logging.warning("Exception from endpoint %s. Url: %s, exception: %s",
+                            self.endpoint.name, self.endpoint.url, e)
             self.schedule_retry()
             return
 
         self._log_to_file(response)
+
+        if response.status_code != 200:
+            self.failures_without_success += 1
+            self.endpoint.error_callback(response)
+            logging.warning("Non-200 response %d from endpoint %s. Url: %s, response: %s",
+                            response.status_code, self.endpoint.name, self.endpoint.url, response.content)
+            self.schedule_retry()
+            return
 
         parse_success = self.endpoint.parse_callback(response)
         if parse_success:

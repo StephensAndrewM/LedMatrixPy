@@ -2,7 +2,6 @@ import datetime
 import logging
 import re
 from dataclasses import dataclass
-from distutils.log import error
 from json import JSONDecodeError
 from typing import Any, Dict, List, Optional
 
@@ -126,7 +125,7 @@ class WeatherSlide(AbstractSlide):
 
         return True
 
-    def handle_observations_error(self, response: requests.models.Response) -> None:
+    def handle_observations_error(self, response: Optional[requests.models.Response]) -> None:
         self.current_temp = None
         self.current_icon = None
 
@@ -196,7 +195,7 @@ class WeatherSlide(AbstractSlide):
         now = self.time_source.now()
         local_timezone = now.astimezone().tzinfo
         end_time = datetime.datetime(
-            now.year, now.month, now.day + date_offset, hour, 0, 0, 0, local_timezone)
+            now.year, now.month, now.day, hour, 0, 0, 0, local_timezone) + datetime.timedelta(days=date_offset)
 
         for period in periods:
             forecast_end_time = datetime.datetime.fromisoformat(
@@ -232,7 +231,7 @@ class WeatherSlide(AbstractSlide):
             logging.warning("Weather icon map did not contain %s", nws_icon)
             return None
 
-    def handle_forecast_error(self, response: requests.models.Response) -> None:
+    def handle_forecast_error(self, response: Optional[requests.models.Response]) -> None:
         self.forecast1 = None
         self.forecast2 = None
 
@@ -263,7 +262,7 @@ class WeatherSlide(AbstractSlide):
         forecast_date = forecast.date.strftime("%a").upper()
         if forecast.high_temp is not None:
             forecast_temp = "%d°/%d°" % (forecast.high_temp,
-                                       forecast.low_temp)
+                                         forecast.low_temp)
         else:
             forecast_temp = "%d°" % (forecast.low_temp)
         self._draw_weather_box(
