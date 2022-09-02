@@ -9,7 +9,8 @@ class TimeSlideTest(unittest.TestCase):
 
     def test_render_time(self) -> None:
         deps = TestDependencies()
-        test_datetime = datetime(2020, 3, 14, 19, 31, 0, 0)
+        # September is the longest month name, with a 2-digit number.
+        test_datetime = datetime(2020, 9, 22, 19, 31, 0, 0)
         deps.time_source.set(test_datetime)
 
         slide = TimeSlide(deps)

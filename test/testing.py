@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Dict, List
 
 import requests
-from constants import GRID_HEIGHT, GRID_WIDTH
 from deps import Dependencies
 from drawing import PixelGrid
 from PIL import Image, ImageChops  # type: ignore

@@ -4,7 +4,6 @@ import re
 from dataclasses import dataclass
 from distutils.log import error
 from json import JSONDecodeError
-from time import tzname
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -274,4 +273,4 @@ class WeatherSlide(AbstractSlide):
         grid.draw_string(temperature, x, 0, Align.CENTER, WHITE)
         if icon:
             grid.draw_glyph_by_name(icon, x-8, 8, WHITE)
-        grid.draw_string(date, x, 24, Align.CENTER, date_color)
+        grid.draw_string(date, x, 25, Align.CENTER, date_color)
