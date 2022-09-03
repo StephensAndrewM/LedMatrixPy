@@ -23,6 +23,8 @@ class Slideshow:
     slides: List[AbstractSlide]
 
     current_slide_id: int
+    current_slide: AbstractSlide
+    prev_slide: AbstractSlide
     advance_timer: Optional[Timer]
     redraw_timer: Optional[Timer]
 
@@ -46,7 +48,8 @@ class Slideshow:
         self.current_slide_id = -1
 
         # Draw the welcome slide while waiting for data
-        self.display.draw(WelcomeImage())
+        self.current_slide = WelcomeSlide()
+        self.display.draw(self.current_slide.draw())
 
         # Do some initial requests to cover for hardware limitations.
         self._wait_for_network()
@@ -73,6 +76,9 @@ class Slideshow:
             if self.slides[self.current_slide_id].is_enabled():
                 break
 
+        self.prev_slide = self.current_slide
+        self.current_slide = self.slides[self.current_slide_id]
+
         # Transition starts and then blocks periodic redraw until complete.
         self.run_transition()
 
@@ -83,13 +89,11 @@ class Slideshow:
             self.redraw_interval.seconds, self.redraw_single)
         self.redraw_timer.start()
 
-        grid = self.slides[self.current_slide_id].draw()
+        grid = self.current_slide.draw()
         self.display.draw(grid)
 
     def run_transition(self) -> None:
         start_time = datetime.now()
-        current_slide = self.slides[self.current_slide_id]
-        prev_slide = self.slides[self._previous_slide_id()]
         # This can be adjusted as more transitions are defined.
         t = FadeToBlack()
 
@@ -99,7 +103,7 @@ class Slideshow:
             if progress >= 1:
                 break
             merged_grid = t.merge(
-                progress, prev_slide.draw(), current_slide.draw())
+                progress, self.prev_slide.draw(), self.current_slide.draw())
             self.display.draw(merged_grid)
 
     def stop(self) -> None:
@@ -148,16 +152,15 @@ class Slideshow:
             logging.warning(
                 "Failed NTP time synchronization with exit code %d", p.returncode)
 
-    def _previous_slide_id(self) -> int:
-        return (self.current_slide_id - 1) % len(self.slides)
-
-
-def WelcomeImage() -> PixelGrid:
-    grid = PixelGrid()
-    grid.draw_string("HELLO!", 64, 2, Align.CENTER, AQUA)
-    grid.draw_string("ANDREW'S LED MATRIX", 64, 16, Align.CENTER, YELLOW)
-    return grid
-
 
 def BlankImage() -> PixelGrid:
     return PixelGrid()
+
+
+class WelcomeSlide(AbstractSlide):
+
+    def draw(self) -> PixelGrid:
+        grid = PixelGrid()
+        grid.draw_string("HELLO!", 64, 2, Align.CENTER, AQUA)
+        grid.draw_string("ANDREW'S LED MATRIX", 64, 16, Align.CENTER, YELLOW)
+        return grid
