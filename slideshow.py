@@ -1,7 +1,7 @@
 import logging
 import subprocess
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
 from threading import Timer
 from typing import List, Optional
 
@@ -12,6 +12,7 @@ from config import Config
 from display import Display
 from drawing import AQUA, YELLOW, Align, PixelGrid
 from requester import Requester
+from transitions import FadeToBlack
 
 
 class Slideshow:
@@ -28,6 +29,9 @@ class Slideshow:
     def __init__(self, config: Config, display: Display, requester: Requester, slides: List[AbstractSlide]) -> None:
         advance_seconds = config.get("slide_advance", 15)
         self.advance_interval = timedelta(seconds=advance_seconds)
+        transition_millis = config.get("transition_millis", 1000)
+        self.transition_interval = timedelta(milliseconds=transition_millis)
+
         # TODO: Make this configurable per-slide.
         self.redraw_interval = timedelta(seconds=1)
         self.display = display
@@ -69,14 +73,34 @@ class Slideshow:
             if self.slides[self.current_slide_id].is_enabled():
                 break
 
-        self.redraw()
+        # Transition starts and then blocks periodic redraw until complete.
+        self.run_transition()
 
-    def redraw(self) -> None:
-        self.redraw_timer = Timer(self.redraw_interval.seconds, self.redraw)
+        self.redraw_single()
+
+    def redraw_single(self) -> None:
+        self.redraw_timer = Timer(
+            self.redraw_interval.seconds, self.redraw_single)
         self.redraw_timer.start()
 
         grid = self.slides[self.current_slide_id].draw()
         self.display.draw(grid)
+
+    def run_transition(self) -> None:
+        start_time = datetime.now()
+        current_slide = self.slides[self.current_slide_id]
+        prev_slide = self.slides[self._previous_slide_id()]
+        # This can be adjusted as more transitions are defined.
+        t = FadeToBlack()
+
+        while True:
+            elapsed_time = datetime.now() - start_time
+            progress = elapsed_time / self.transition_interval
+            if progress >= 1:
+                break
+            merged_grid = t.merge(
+                progress, prev_slide.draw(), current_slide.draw())
+            self.display.draw(merged_grid)
 
     def stop(self) -> None:
         # Cancel timers and ensure that their threads have terminated.
@@ -123,6 +147,9 @@ class Slideshow:
         if p.returncode != 0:
             logging.warning(
                 "Failed NTP time synchronization with exit code %d", p.returncode)
+
+    def _previous_slide_id(self) -> int:
+        return (self.current_slide_id - 1) % len(self.slides)
 
 
 def WelcomeImage() -> PixelGrid:

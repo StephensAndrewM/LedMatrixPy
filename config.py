@@ -9,6 +9,7 @@ _SlideConfig = TypedDict('_SlideConfig', {
 
 Config = TypedDict('Config', {
     "slide_advance": int,
+    "transition_millis": int,
     "slides": List[_SlideConfig]
 })
 

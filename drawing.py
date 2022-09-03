@@ -45,6 +45,11 @@ class PixelGrid:
         self.pixels = [[Color() for x in range(0, GRID_WIDTH)]
                        for y in range(0, GRID_HEIGHT)]
 
+    def get(self, x: int, y: int) -> Optional[Color]:
+        if x >= 0 and x < GRID_WIDTH and y >= 0 and y < GRID_HEIGHT:
+            return self.pixels[y][x]
+        return None
+
     def set(self, x: int, y: int, c: Color) -> None:
         if x >= 0 and x < GRID_WIDTH and y >= 0 and y < GRID_HEIGHT:
             self.pixels[y][x] = c
@@ -104,3 +109,21 @@ class PixelGrid:
             for i, pixel in enumerate(row):
                 img.putpixel((i, j), pixel.to_tuple())
         return img
+
+    def darken(self, x: int, y: int, amount: float) -> None:
+        """Darken the pixel at the given coordinate. 
+
+        amount = 0 means the color is unaffected.
+        amount = 1 means entirely black."""
+        base_color = self.get(x, y)
+        if base_color is None:
+            return None
+
+        modifier = 1-amount
+
+        new_color = Color(
+            int(base_color.r * modifier),
+            int(base_color.g * modifier),
+            int(base_color.b * modifier)
+        )
+        self.set(x, y, new_color)
