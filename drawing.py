@@ -36,6 +36,7 @@ BLUE = Color(0, 0, 255)
 AQUA = Color(0, 255, 255)
 PURPLE = Color(255, 0, 255)
 YELLOW = Color(255, 255, 0)
+ORANGE = Color(255, 220, 0)
 
 
 class PixelGrid:
@@ -85,6 +86,13 @@ class PixelGrid:
             self.draw_glyph(glyph, originX+offsetX, y, c)
             offsetX += glyph.width() + 1
 
+    def get_string_width(self, text: str) -> int:
+        width = 0
+        for i in range(0, len(text)):
+            glyph = GLYPH_SET[text[i]]
+            width += glyph.width() + 1
+        return width-1
+
     def draw_glyph_by_name(self, glyph_name: str, x: int, y: int, c: Color) -> None:
         if glyph_name not in GLYPH_SET:
             logging.debug("Glyph %s not in global glyph set", glyph_name)
@@ -102,6 +110,19 @@ class PixelGrid:
                          Align.CENTER, WHITE, GRID_WIDTH)
         self.draw_string(message, int(GRID_WIDTH/2), 16,
                          Align.CENTER, RED, GRID_WIDTH)
+
+    def draw_box(self, x: int, y: int, width: int, height: int, c: Color) -> None:
+        for j in range(y, y+height):
+            for i in range(x, x+width):
+                self.set(i, j, c)
+
+    def draw_empty_box(self, x: int, y: int, width: int, height: int, c: Color) -> None:
+        for j in range(y, y+height):
+            self.set(x, j, c)
+            self.set(x+width-1, j, c)
+        for i in range(x, x+width):
+            self.set(i, y, c)
+            self.set(i, y+height-1, c)
 
     def as_image(self) -> Image:
         img = Image.new('RGB', (GRID_WIDTH, GRID_HEIGHT))
