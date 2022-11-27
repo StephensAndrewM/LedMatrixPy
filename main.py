@@ -4,6 +4,7 @@ from time import sleep
 from typing import List
 
 from abstractslide import AbstractSlide
+from christmasslide import ChristmasSlide
 from config import Config, load_config
 from controller import Controller
 from deps import Dependencies
@@ -65,6 +66,8 @@ def create_slides_from_config(config: Config, deps: Dependencies) -> List[Abstra
             slides.append(TimeSlide(deps))
         elif type == "WeatherSlide":
             slides.append(WeatherSlide(deps, options))
+        elif type == "ChristmasSlide":
+            slides.append(ChristmasSlide(deps))
         else:
             logging.warning("Unknown slide type %s", slide_config["type"])
     return slides

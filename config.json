@@ -5,6 +5,9 @@
             "type": "TimeSlide"
         },
         {
+            "type": "ChristmasSlide"
+        },
+        {
             "type": "WeatherSlide",
             "options": {
                 "observations_office": "KBOS",

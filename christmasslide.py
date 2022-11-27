@@ -69,8 +69,7 @@ class ChristmasSlide(AbstractSlide):
 
     def __init__(self, deps: Dependencies):
         self.time_source = deps.get_time_source()
-        self.christmas_date = datetime.datetime(
-            self.time_source.now().year, 12, 25)
+        self.christmas_date = self.time_source.now().replace(month=12, day=25)
 
         # Preprocess the tree definition into a list of points
         self.tree_points = []

@@ -13,6 +13,8 @@ class FakeTimeSource(TimeSource):
     clock_time: datetime
 
     def set(self, now: datetime) -> None:
+        if now.tzinfo is None:
+            print("Warning! Set the time zone on the testing datetime to match the real version.")
         self.clock_time = now
 
     def now(self) -> datetime:
