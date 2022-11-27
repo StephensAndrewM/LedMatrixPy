@@ -51,6 +51,9 @@ class FakeRequester(Requester):
             response._content = str.encode(f.read())  # type: ignore
             self.expected_responses[url] = response
 
+    def clear_expectation(self, url: str) -> None:
+        self.expected_responses.pop(url, None)
+
 
 class TestDependencies(Dependencies):
     time_source: FakeTimeSource

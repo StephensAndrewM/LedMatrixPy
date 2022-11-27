@@ -55,6 +55,8 @@ _ICON_MAPPING = {
     "fog":             "cloud",           # Fog/mist
 }
 
+_FORECAST_STALENESS_THRESHOLD = datetime.timedelta(hours=6)
+
 
 @dataclass
 class DailyForecast:
@@ -76,6 +78,7 @@ class WeatherSlide(AbstractSlide):
     current_temp: Optional[int]
     current_icon: Optional[str]
 
+    last_forecast_retrieval: Optional[datetime.datetime]
     forecast1: Optional[DailyForecast]
     forecast2: Optional[DailyForecast]
 
@@ -84,6 +87,7 @@ class WeatherSlide(AbstractSlide):
 
         self.current_temp = None
         self.current_icon = None
+        self.last_forecast_retrieval = None
         self.forecast1 = None
         self.forecast2 = None
 
@@ -113,10 +117,12 @@ class WeatherSlide(AbstractSlide):
         except JSONDecodeError:
             logging.warning(
                 "Failed to decode observations JSON: %s", response.content)
+            self.handle_observations_error(None)
             return False
 
         if not "temperature" in data or data["temperature"]["value"] is None:
             logging.debug("Forecast contains null temperature")
+            self.handle_observations_error(None)
             return False
 
         self.current_temp = int(
@@ -135,6 +141,7 @@ class WeatherSlide(AbstractSlide):
         except JSONDecodeError:
             logging.warning(
                 "Failed to decode forecast JSON: %s", response.content)
+            self.handle_forecast_error(None)
             return False
 
         try:
@@ -142,34 +149,40 @@ class WeatherSlide(AbstractSlide):
         except ValueError:
             logging.warning(
                 "Could not parse forecast update time %s", data["updateTime"])
+            self.handle_forecast_error(None)
             return False
 
         now = self.time_source.now()
 
-        if now - update_time > datetime.timedelta(hours=6):
+        if now - update_time > _FORECAST_STALENESS_THRESHOLD:
             logging.warning(
                 "Forecast is too old. Update time is %s", update_time)
+            self.handle_forecast_error(None)
             return False
 
         forecast_tonight = self._get_forecast_with_end_time(
             1, 6, data["periods"])
         if forecast_tonight is None:
+            self.handle_forecast_error(None)
             return False
+
+        forecast1 = None
 
         if now.hour < 18:
             forecast_today = self._get_forecast_with_end_time(
                 0, 18, data["periods"])
             if forecast_today is None:
+                self.handle_forecast_error(None)
                 return False
 
-            self.forecast1 = DailyForecast(
+            forecast1 = DailyForecast(
                 date=now,
                 icon=self._icon_url_to_weather_glyph(forecast_today.icon),
                 high_temp=forecast_today.temperature,
                 low_temp=forecast_tonight.temperature)
 
         else:
-            self.forecast1 = DailyForecast(
+            forecast1 = DailyForecast(
                 date=now,
                 icon=self._icon_url_to_weather_glyph(forecast_tonight.icon),
                 high_temp=None,
@@ -180,8 +193,12 @@ class WeatherSlide(AbstractSlide):
         forecast_tomorrow_night = self._get_forecast_with_end_time(
             2, 6, data["periods"])
         if forecast_tomorrow is None or forecast_tomorrow_night is None:
+            self.handle_forecast_error(None)
             return False
 
+        # Assign all values at end in case an error returns otherwise.
+        self.last_forecast_retrieval = self.time_source.now()
+        self.forecast1 = forecast1
         self.forecast2 = DailyForecast(
             date=now + datetime.timedelta(days=1),
             icon=self._icon_url_to_weather_glyph(forecast_tomorrow.icon),
@@ -232,8 +249,11 @@ class WeatherSlide(AbstractSlide):
             return None
 
     def handle_forecast_error(self, response: Optional[requests.models.Response]) -> None:
-        self.forecast1 = None
-        self.forecast2 = None
+        if (self.last_forecast_retrieval is not None and
+                self.time_source.now() - self.last_forecast_retrieval > _FORECAST_STALENESS_THRESHOLD):
+            self.forecast1 = None
+            self.forecast2 = None
+        # If within the threshold, show the old forecast instead of an error.
 
     def draw(self) -> PixelGrid:
         grid = PixelGrid()

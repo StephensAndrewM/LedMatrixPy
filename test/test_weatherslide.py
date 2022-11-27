@@ -59,6 +59,47 @@ class WeatherSlideTest(unittest.TestCase):
         self.assertTrue(compare_to_golden(
             "WeatherSlide_missing_forecast", grid))
 
+    def test_render_forecast_error_soon_after_success(self) -> None:
+        test_datetime = datetime.datetime(
+            2022, 6, 30, 15, 31, 0, 0, tz.gettz("America/New_York"))
+        self.deps.time_source.set(test_datetime)
+
+        self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
+                                         "weatherslide_observations.json")
+        self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
+                                         "weatherslide_forecast_afternoon.json")
+        self.deps.get_requester().start()
+
+        self.deps.time_source.set(
+            test_datetime + datetime.timedelta(minutes=20))
+        self.deps.get_requester().clear_expectation(_DEFAULT_FORECAST_URL)
+        self.deps.get_requester().start()
+        grid = self.slide.draw()
+
+        # Slide should display the existing forecast, ignoring the error.
+        self.assertTrue(compare_to_golden(
+            "WeatherSlide_forecast_error_soon_after_success", grid))
+
+    def test_render_forecast_error_long_after_success(self) -> None:
+        test_datetime = datetime.datetime(
+            2022, 6, 30, 15, 31, 0, 0, tz.gettz("America/New_York"))
+        self.deps.time_source.set(test_datetime)
+
+        self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
+                                         "weatherslide_observations.json")
+        self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
+                                         "weatherslide_forecast_afternoon.json")
+        self.deps.get_requester().start()
+
+        self.deps.time_source.set(test_datetime + datetime.timedelta(hours=12))
+        self.deps.get_requester().clear_expectation(_DEFAULT_FORECAST_URL)
+        self.deps.get_requester().start()
+        grid = self.slide.draw()
+
+        # Slide should not display a forecast because data is too old.
+        self.assertTrue(compare_to_golden(
+            "WeatherSlide_forecast_error_long_after_success", grid))
+
     def test_render_observations_error(self) -> None:
         test_datetime = datetime.datetime(
             2022, 6, 30, 15, 31, 0, 0, tz.gettz("America/New_York"))
