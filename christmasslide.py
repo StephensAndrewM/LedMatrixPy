@@ -69,7 +69,9 @@ class ChristmasSlide(AbstractSlide):
 
     def __init__(self, deps: Dependencies):
         self.time_source = deps.get_time_source()
-        self.christmas_date = self.time_source.now().replace(month=12, day=25)
+        # Keep year and timezone, replace all other fields.
+        self.time_source.now().replace(
+            month=12, day=25, hour=0, minute=0, second=0, microsecond=0)
 
         # Preprocess the tree definition into a list of points
         self.tree_points = []
@@ -107,6 +109,7 @@ class ChristmasSlide(AbstractSlide):
             grid.set(x+i, y+j, c)
 
     def _draw_countdown(self, grid: PixelGrid, x: int) -> None:
+        # Add one day to account for the fraction of today remaining.
         days = (self.christmas_date - self.time_source.now()).days + 1
         box_width = grid.get_string_width(str(days)) + 8
         # Pad the box for shorter numbers
