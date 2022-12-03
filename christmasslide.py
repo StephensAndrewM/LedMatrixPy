@@ -70,7 +70,7 @@ class ChristmasSlide(AbstractSlide):
     def __init__(self, deps: Dependencies):
         self.time_source = deps.get_time_source()
         # Keep year and timezone, replace all other fields.
-        self.time_source.now().replace(
+        self.christmas_date = self.time_source.now().replace(
             month=12, day=25, hour=0, minute=0, second=0, microsecond=0)
 
         # Preprocess the tree definition into a list of points
