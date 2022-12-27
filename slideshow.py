@@ -25,6 +25,7 @@ class Slideshow:
     current_slide_id: int
     current_slide: AbstractSlide
     prev_slide: AbstractSlide
+    is_running: bool
     advance_timer: Optional[Timer]
     redraw_timer: Optional[Timer]
 
@@ -40,11 +41,15 @@ class Slideshow:
         self.requester = requester
         self.slides = slides
 
+        self.is_running = False
         self.advance_timer = None
         self.redraw_timer = None
         self.start()
 
     def start(self) -> None:
+        if self.is_running:
+            return
+
         self.current_slide_id = -1
 
         # Draw the welcome slide while waiting for data
@@ -57,6 +62,7 @@ class Slideshow:
 
         # Starts data requesting loop, returning once initial requests are complete.
         self.requester.start()
+        self.is_running = True
 
         self.advance()
 
@@ -107,6 +113,9 @@ class Slideshow:
             self.display.draw(merged_grid)
 
     def stop(self) -> None:
+        if not self.is_running:
+            return
+
         # Cancel timers and ensure that their threads have terminated.
         if self.advance_timer is not None:
             self.advance_timer.cancel()
@@ -119,6 +128,7 @@ class Slideshow:
 
         self.display.clear()
         self.requester.stop()
+        self.is_running = False
 
     def freeze(self) -> None:
         if self.advance_timer is not None:

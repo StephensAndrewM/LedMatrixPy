@@ -43,6 +43,7 @@ def generate_images() -> None:
     deps.get_requester().start()
     sleep(10)
     write_grid_to_file("WeatherSlide", slide.draw())
+    deps.get_requester().stop()
 
 
 def run_slideshow() -> None:
