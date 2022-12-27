@@ -94,12 +94,12 @@ class ChristmasSlide(AbstractSlide):
         grid.set(x+10, y-1, yellow)
 
         # Tree body
-        dark_green = Color(0, 128, 0)
+        dark_green = Color(0, 64, 0)
         for (i, j) in self.tree_points:
             grid.set(x+i, j+y, dark_green)
 
         # Stump
-        brown = Color(255, 128, 0)
+        brown = Color(128, 64, 0)
         grid.draw_box(x+9, y+25, 3, 5, brown)
 
         # Lights
