@@ -37,6 +37,7 @@ AQUA = Color(0, 255, 255)
 PURPLE = Color(255, 0, 255)
 YELLOW = Color(255, 255, 0)
 ORANGE = Color(255, 220, 0)
+GRAY = Color(128, 128, 128)
 
 
 class PixelGrid:

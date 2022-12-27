@@ -9,7 +9,7 @@ import requests
 
 from abstractslide import AbstractSlide
 from deps import Dependencies
-from drawing import RED, WHITE, YELLOW, Align, Color, PixelGrid
+from drawing import RED, WHITE, YELLOW, Align, Color, PixelGrid, GRAY
 from requester import Endpoint
 from timesource import TimeSource
 
@@ -55,6 +55,9 @@ _ICON_MAPPING = {
     "fog":             "cloud",           # Fog/mist
 }
 
+_OBSERVATIONS_REFRESH_INTERVAL = datetime.timedelta(minutes=5)
+_OBSERVATIONS_STALENESS_THRESHOLD = datetime.timedelta(hours=2)
+_FORECAST_REFRESH_INTERVAL = datetime.timedelta(minutes=20)
 _FORECAST_STALENESS_THRESHOLD = datetime.timedelta(hours=6)
 
 
@@ -75,19 +78,24 @@ class ForecastPeriod:
 class WeatherSlide(AbstractSlide):
     time_source: TimeSource
 
+    last_observations_retrieval: datetime.datetime
     current_temp: Optional[int]
     current_icon: Optional[str]
 
-    last_forecast_retrieval: Optional[datetime.datetime]
+    last_forecast_retrieval: datetime.datetime
     forecast1: Optional[DailyForecast]
     forecast2: Optional[DailyForecast]
 
     def __init__(self, deps: Dependencies, options: Dict[str, str]) -> None:
         self.time_source = deps.get_time_source()
 
+        local_timezone = datetime.datetime.now().astimezone().tzinfo
+        self.last_observations_retrieval = datetime.datetime.min.replace(
+            tzinfo=local_timezone)
         self.current_temp = None
         self.current_icon = None
-        self.last_forecast_retrieval = None
+        self.last_forecast_retrieval = datetime.datetime.min.replace(
+            tzinfo=local_timezone)
         self.forecast1 = None
         self.forecast2 = None
 
@@ -95,7 +103,7 @@ class WeatherSlide(AbstractSlide):
         deps.get_requester().add_endpoint(Endpoint(
             name="weather_observations",
             url="https://api.weather.gov/stations/%s/observations/latest" % observations_office,
-            refresh_interval=datetime.timedelta(minutes=5),
+            refresh_interval=_OBSERVATIONS_REFRESH_INTERVAL,
             parse_callback=self.parse_observations,
             error_callback=self.handle_observations_error,
             headers=_NWS_HEADERS,
@@ -105,7 +113,7 @@ class WeatherSlide(AbstractSlide):
         deps.get_requester().add_endpoint(Endpoint(
             name="weather_forecast",
             url="https://api.weather.gov/gridpoints/%s/forecast" % forecast_office,
-            refresh_interval=datetime.timedelta(minutes=20),
+            refresh_interval=_FORECAST_REFRESH_INTERVAL,
             parse_callback=self.parse_forecast,
             error_callback=self.handle_forecast_error,
             headers=_NWS_HEADERS,
@@ -117,14 +125,14 @@ class WeatherSlide(AbstractSlide):
         except JSONDecodeError:
             logging.warning(
                 "Failed to decode observations JSON: %s", response.content)
-            self.handle_observations_error(None)
             return False
 
         if not "temperature" in data or data["temperature"]["value"] is None:
-            logging.debug("Forecast contains null temperature")
-            self.handle_observations_error(None)
+            logging.debug("Observations contain null temperature")
             return False
 
+        # Assign all values at end in case an error returns otherwise.
+        self.last_observations_retrieval = self.time_source.now()
         self.current_temp = int(
             self._celsius_to_fahrenheit(data["temperature"]["value"]))
         self.current_icon = self._icon_url_to_weather_glyph(data["icon"])
@@ -132,8 +140,7 @@ class WeatherSlide(AbstractSlide):
         return True
 
     def handle_observations_error(self, response: Optional[requests.models.Response]) -> None:
-        self.current_temp = None
-        self.current_icon = None
+        pass
 
     def parse_forecast(self, response: requests.models.Response) -> bool:
         try:
@@ -141,7 +148,6 @@ class WeatherSlide(AbstractSlide):
         except JSONDecodeError:
             logging.warning(
                 "Failed to decode forecast JSON: %s", response.content)
-            self.handle_forecast_error(None)
             return False
 
         try:
@@ -149,7 +155,6 @@ class WeatherSlide(AbstractSlide):
         except ValueError:
             logging.warning(
                 "Could not parse forecast update time %s", data["updateTime"])
-            self.handle_forecast_error(None)
             return False
 
         now = self.time_source.now()
@@ -157,13 +162,13 @@ class WeatherSlide(AbstractSlide):
         if now - update_time > _FORECAST_STALENESS_THRESHOLD:
             logging.warning(
                 "Forecast is too old. Update time is %s", update_time)
-            self.handle_forecast_error(None)
             return False
 
         forecast_tonight = self._get_forecast_with_end_time(
             1, 6, data["periods"])
         if forecast_tonight is None:
-            self.handle_forecast_error(None)
+            logging.warning(
+                "Could not find forecast periods for tonight at %s in %s", now, data["periods"])
             return False
 
         forecast1 = None
@@ -172,7 +177,8 @@ class WeatherSlide(AbstractSlide):
             forecast_today = self._get_forecast_with_end_time(
                 0, 18, data["periods"])
             if forecast_today is None:
-                self.handle_forecast_error(None)
+                logging.warning(
+                    "Could not find forecast periods for today at %s in %s", now, data["periods"])
                 return False
 
             forecast1 = DailyForecast(
@@ -193,7 +199,8 @@ class WeatherSlide(AbstractSlide):
         forecast_tomorrow_night = self._get_forecast_with_end_time(
             2, 6, data["periods"])
         if forecast_tomorrow is None or forecast_tomorrow_night is None:
-            self.handle_forecast_error(None)
+            logging.warning(
+                "Could not find forecast periods for tomorrow or tomorrow night at %s in %s", now, data["periods"])
             return False
 
         # Assign all values at end in case an error returns otherwise.
@@ -208,7 +215,8 @@ class WeatherSlide(AbstractSlide):
 
         return True
 
-    def _get_forecast_with_end_time(self, date_offset: int, hour: int, periods: List[Dict[str, Any]]) -> Optional[ForecastPeriod]:
+    def _get_forecast_with_end_time(self, date_offset: int, hour: int,
+                                    periods: List[Dict[str, Any]]) -> Optional[ForecastPeriod]:
         now = self.time_source.now()
         local_timezone = now.astimezone().tzinfo
         end_time = datetime.datetime(
@@ -249,32 +257,32 @@ class WeatherSlide(AbstractSlide):
             return None
 
     def handle_forecast_error(self, response: Optional[requests.models.Response]) -> None:
-        if (self.last_forecast_retrieval is not None and
-                self.time_source.now() - self.last_forecast_retrieval > _FORECAST_STALENESS_THRESHOLD):
-            self.forecast1 = None
-            self.forecast2 = None
-        # If within the threshold, show the old forecast instead of an error.
+        pass
 
     def draw(self) -> PixelGrid:
         grid = PixelGrid()
 
-        if self.current_temp is None and self.forecast1 is None:
-            grid.draw_error("WEATHER", "NO DATA")
-            return grid
-
-        if self.current_temp is None:
-            grid.draw_string("NOW", 21, 0, Align.CENTER, YELLOW)
-            grid.draw_string("?", 21, 16, Align.CENTER, RED)
-        else:
+        observations_time_delta = self.time_source.now() - self.last_observations_retrieval
+        if (self.current_temp is not None
+                and observations_time_delta <= _OBSERVATIONS_STALENESS_THRESHOLD):
             self._draw_weather_box(grid, 21, "NOW", YELLOW, "%d°" %
                                    self.current_temp, self.current_icon)
+            if (observations_time_delta > _OBSERVATIONS_REFRESH_INTERVAL*2):
+                grid.set(0, 31, RED)
+        else:
+            grid.draw_string("NOW", 21, 0, Align.CENTER, GRAY)
+            grid.draw_string("?", 21, 16, Align.CENTER, GRAY)
 
-        if self.forecast1 is not None and self.forecast2 is not None:
+        forecast_time_delta = self.time_source.now() - self.last_forecast_retrieval
+        if (self.forecast1 is not None and self.forecast2 is not None
+                and forecast_time_delta <= _FORECAST_STALENESS_THRESHOLD):
             self._draw_forecast(grid, 63, self.forecast1)
             self._draw_forecast(grid, 105, self.forecast2)
+            if (forecast_time_delta > _FORECAST_REFRESH_INTERVAL*2):
+                grid.set(127, 31, RED)
         else:
-            grid.draw_string("FORECAST", 86, 8, Align.CENTER, RED)
-            grid.draw_string("MISSING", 86, 16, Align.CENTER, RED)
+            grid.draw_string("FORECAST", 86, 8, Align.CENTER, GRAY)
+            grid.draw_string("MISSING", 86, 16, Align.CENTER, GRAY)
 
         return grid
 
@@ -288,7 +296,8 @@ class WeatherSlide(AbstractSlide):
         self._draw_weather_box(
             grid, x, forecast_date, WHITE, forecast_temp, forecast.icon)
 
-    def _draw_weather_box(self, grid: PixelGrid, x: int, date: str, date_color: Color, temperature: str, icon: Optional[str]) -> None:
+    def _draw_weather_box(self, grid: PixelGrid, x: int, date: str, date_color: Color,
+                          temperature: str, icon: Optional[str]) -> None:
         grid.draw_string(temperature, x, 0, Align.CENTER, WHITE)
         if icon:
             grid.draw_glyph_by_name(icon, x-8, 8, WHITE)
