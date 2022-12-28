@@ -6,11 +6,12 @@ from threading import Timer
 from typing import List, Optional
 
 import requests
+from PIL import Image, ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide
 from config import Config
 from display import Display
-from drawing import AQUA, YELLOW, Align, PixelGrid
+from drawing import AQUA, YELLOW, Align, default_image, draw_string
 from requester import Requester
 from transitions import FadeToBlack
 
@@ -54,7 +55,7 @@ class Slideshow:
 
         # Draw the welcome slide while waiting for data
         self.current_slide = WelcomeSlide()
-        self.display.draw(self.current_slide.draw())
+        self.draw_current_to_display()
 
         # Do some initial requests to cover for hardware limitations.
         self._wait_for_network()
@@ -88,15 +89,19 @@ class Slideshow:
         # Transition starts and then blocks periodic redraw until complete.
         self.run_transition()
 
-        self.redraw_single()
+        self.draw_and_reschedule()
 
-    def redraw_single(self) -> None:
+    def draw_and_reschedule(self) -> None:
         self.redraw_timer = Timer(
-            self.redraw_interval.seconds, self.redraw_single)
+            self.redraw_interval.seconds, self.draw_and_reschedule)
         self.redraw_timer.start()
 
-        grid = self.current_slide.draw()
-        self.display.draw(grid)
+        self.draw_current_to_display()
+
+    def draw_current_to_display(self) -> None:
+        img = default_image()
+        self.current_slide.draw(ImageDraw.Draw(img))
+        self.display.draw(img)
 
     def run_transition(self) -> None:
         start_time = datetime.now()
@@ -108,8 +113,11 @@ class Slideshow:
             progress = elapsed_time / self.transition_interval
             if progress >= 1:
                 break
-            merged_grid = t.merge(
-                progress, self.prev_slide.draw(), self.current_slide.draw())
+            prev_img = default_image()
+            current_img = default_image()
+            self.prev_slide.draw(ImageDraw.Draw(prev_img))
+            self.current_slide.draw(ImageDraw.Draw(current_img))
+            merged_grid = t.merge(progress, prev_img, current_img)
             self.display.draw(merged_grid)
 
     def stop(self) -> None:
@@ -163,14 +171,8 @@ class Slideshow:
                 "Failed NTP time synchronization with exit code %d", p.returncode)
 
 
-def BlankImage() -> PixelGrid:
-    return PixelGrid()
-
-
 class WelcomeSlide(AbstractSlide):
 
-    def draw(self) -> PixelGrid:
-        grid = PixelGrid()
-        grid.draw_string("HELLO!", 64, 2, Align.CENTER, AQUA)
-        grid.draw_string("ANDREW'S LED MATRIX", 64, 16, Align.CENTER, YELLOW)
-        return grid
+    def draw(self, img: ImageDraw) -> None:
+        draw_string(img, "HELLO!", 64, 2, Align.CENTER, AQUA)
+        draw_string(img, "ANDREW'S LED MATRIX", 64, 16, Align.CENTER, YELLOW)

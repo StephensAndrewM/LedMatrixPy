@@ -1,6 +1,6 @@
 import datetime
 import unittest
-from test.testing import TestDependencies, compare_to_golden
+from test.testing import TestDependencies, draw_and_compare
 
 from dateutil import tz
 
@@ -16,10 +16,9 @@ class ChristmasSlideTest(unittest.TestCase):
         deps.time_source.set(test_datetime)
 
         slide = ChristmasSlide(deps)
-        grid = slide.draw()
 
         self.assertTrue(slide.is_enabled())
-        self.assertTrue(compare_to_golden("ChristmasSlide_24days", grid))
+        self.assertTrue(draw_and_compare("ChristmasSlide_24days", slide))
 
     def test_render_3_before_christmas(self) -> None:
         deps = TestDependencies()
@@ -28,10 +27,9 @@ class ChristmasSlideTest(unittest.TestCase):
         deps.time_source.set(test_datetime)
 
         slide = ChristmasSlide(deps)
-        grid = slide.draw()
 
         self.assertTrue(slide.is_enabled())
-        self.assertTrue(compare_to_golden("ChristmasSlide_3days", grid))
+        self.assertTrue(draw_and_compare("ChristmasSlide_3days", slide))
 
     def test_isenabled_after_christmas(self) -> None:
         deps = TestDependencies()

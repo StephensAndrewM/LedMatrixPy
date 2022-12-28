@@ -1,6 +1,5 @@
+from PIL import Image  # type: ignore
 from rgbmatrix import RGBMatrix, RGBMatrixOptions  # type: ignore
-
-from drawing import PixelGrid
 
 
 class Display:
@@ -20,8 +19,8 @@ class Display:
         options.hardware_mapping = 'adafruit-hat-pwm'
         self.matrix = RGBMatrix(options=options)
 
-    def draw(self, grid: PixelGrid) -> None:
-        self.matrix.SetImage(grid.as_image())
+    def draw(self, img: Image) -> None:
+        self.matrix.SetImage(img)
 
     def clear(self) -> None:
         self.matrix.Clear()

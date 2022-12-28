@@ -6,15 +6,17 @@ from json import JSONDecodeError
 from typing import Any, Dict, List, Optional
 
 import requests
+from PIL import ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide
 from deps import Dependencies
-from drawing import RED, WHITE, YELLOW, Align, Color, PixelGrid, GRAY
+from drawing import (GRAY, RED, WHITE, YELLOW, Align, Color,
+                     draw_glyph_by_name, draw_string)
 from requester import Endpoint
 from timesource import TimeSource
 
 _NWS_HEADERS = {
-    "User-Agent": "https://github.com/stephensandrewm/LedMatrix",
+    "User-Agent": "https://github.com/stephensandrewm/LedMatrixPy",
     "Accept": "application/ld+json",
 }
 
@@ -259,34 +261,30 @@ class WeatherSlide(AbstractSlide):
     def handle_forecast_error(self, response: Optional[requests.models.Response]) -> None:
         pass
 
-    def draw(self) -> PixelGrid:
-        grid = PixelGrid()
-
+    def draw(self, img: ImageDraw) -> None:
         observations_time_delta = self.time_source.now() - self.last_observations_retrieval
         if (self.current_temp is not None
                 and observations_time_delta <= _OBSERVATIONS_STALENESS_THRESHOLD):
-            self._draw_weather_box(grid, 21, "NOW", YELLOW, "%d°" %
+            self._draw_weather_box(img, 21, "NOW", YELLOW, "%d°" %
                                    self.current_temp, self.current_icon)
             if (observations_time_delta > _OBSERVATIONS_REFRESH_INTERVAL*2):
-                grid.set(0, 31, RED)
+                img.point((0, 31), RED)
         else:
-            grid.draw_string("NOW", 21, 0, Align.CENTER, GRAY)
-            grid.draw_string("?", 21, 16, Align.CENTER, GRAY)
+            draw_string(img, "NOW", 21, 0, Align.CENTER, GRAY)
+            draw_string(img, "?", 21, 16, Align.CENTER, GRAY)
 
         forecast_time_delta = self.time_source.now() - self.last_forecast_retrieval
         if (self.forecast1 is not None and self.forecast2 is not None
                 and forecast_time_delta <= _FORECAST_STALENESS_THRESHOLD):
-            self._draw_forecast(grid, 63, self.forecast1)
-            self._draw_forecast(grid, 105, self.forecast2)
+            self._draw_forecast(img, 63, self.forecast1)
+            self._draw_forecast(img, 105, self.forecast2)
             if (forecast_time_delta > _FORECAST_REFRESH_INTERVAL*2):
-                grid.set(127, 31, RED)
+                img.point((127, 31), RED)
         else:
-            grid.draw_string("FORECAST", 86, 8, Align.CENTER, GRAY)
-            grid.draw_string("MISSING", 86, 16, Align.CENTER, GRAY)
+            draw_string(img, "FORECAST", 86, 8, Align.CENTER, GRAY)
+            draw_string(img, "MISSING", 86, 16, Align.CENTER, GRAY)
 
-        return grid
-
-    def _draw_forecast(self, grid: PixelGrid, x: int, forecast: DailyForecast) -> None:
+    def _draw_forecast(self, img: ImageDraw, x: int, forecast: DailyForecast) -> None:
         forecast_date = forecast.date.strftime("%a").upper()
         if forecast.high_temp is not None:
             forecast_temp = "%d°/%d°" % (forecast.high_temp,
@@ -294,11 +292,11 @@ class WeatherSlide(AbstractSlide):
         else:
             forecast_temp = "%d°" % (forecast.low_temp)
         self._draw_weather_box(
-            grid, x, forecast_date, WHITE, forecast_temp, forecast.icon)
+            img, x, forecast_date, WHITE, forecast_temp, forecast.icon)
 
-    def _draw_weather_box(self, grid: PixelGrid, x: int, date: str, date_color: Color,
+    def _draw_weather_box(self, img: ImageDraw, x: int, date: str, date_color: Color,
                           temperature: str, icon: Optional[str]) -> None:
-        grid.draw_string(temperature, x, 0, Align.CENTER, WHITE)
+        draw_string(img, temperature, x, 0, Align.CENTER, WHITE)
         if icon:
-            grid.draw_glyph_by_name(icon, x-8, 8, WHITE)
-        grid.draw_string(date, x, 25, Align.CENTER, date_color)
+            draw_glyph_by_name(img, icon, x-8, 8, WHITE)
+        draw_string(img, date, x, 25, Align.CENTER, date_color)

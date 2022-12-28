@@ -1,28 +1,27 @@
-from re import L
-
 from PIL import Image, ImageDraw  # type: ignore
 
 from constants import GRID_HEIGHT, GRID_WIDTH
-from drawing import Color, PixelGrid
+from drawing import Color
 
 RENDER_SCALE = 10
 DOT_PADDING = 2
 MIN_BRIGHTNESS = 40
 
 
-def write_grid_to_file(name: str, grid: PixelGrid) -> None:
+def write_grid_to_file(name: str, base_img: Image) -> None:
     width = (GRID_WIDTH * RENDER_SCALE) + DOT_PADDING
     height = (GRID_HEIGHT * RENDER_SCALE) + DOT_PADDING
     img = Image.new('RGB', (width, height))
     draw = ImageDraw.Draw(img)
-    for j, row in enumerate(grid.pixels):
-        for i, pixel in enumerate(row):
+    for j in range(0, GRID_HEIGHT):
+        for i in range(0, GRID_WIDTH):
+            pixel = base_img.getpixel((i, j))
             x0 = (i * RENDER_SCALE) + DOT_PADDING
             x1 = x0 + RENDER_SCALE - (DOT_PADDING * 2)
             y0 = (j * RENDER_SCALE) + DOT_PADDING
             y1 = y0 + RENDER_SCALE - (DOT_PADDING * 2)
             draw.ellipse([x0, y0, x1, y1],
-                         fill=_brightness_floor(pixel).to_tuple())
+                         fill=_brightness_floor(pixel))
     img.save("render/" + name + ".png")
 
 
@@ -33,4 +32,4 @@ def _brightness_floor(c: Color) -> Color:
             return a
         else:
             return b
-    return Color(gt(c.r, MIN_BRIGHTNESS), gt(c.g, MIN_BRIGHTNESS), gt(c.b, MIN_BRIGHTNESS))
+    return (gt(c[0], MIN_BRIGHTNESS), gt(c[1], MIN_BRIGHTNESS), gt(c[2], MIN_BRIGHTNESS))

@@ -1,28 +1,24 @@
 from abc import ABC, abstractmethod
 
-from drawing import PixelGrid
-
-from constants import GRID_HEIGHT, GRID_WIDTH
+from PIL import Image, ImageEnhance  # type: ignore
 
 
 class Transition(ABC):
 
     @abstractmethod
-    def merge(self, progress: float, g0: PixelGrid, g1: PixelGrid) -> PixelGrid:
+    def merge(self, progress: float, img0: Image, img1: Image) -> Image:
         pass
 
 
 class FadeToBlack(Transition):
-    def merge(self, progress: float, g0: PixelGrid, g1: PixelGrid) -> PixelGrid:
+    def merge(self, progress: float, img0: Image, img1: Image) -> Image:
         if progress < 0.5:
-            target_image = g0
-            darken_amount = progress*2
+            enhancer = ImageEnhance.Brightness(img0)
+            # 0 -> 1, 0.1 -> 0.8, 0.5 -> 0
+            factor = 1-(progress*2)
+            return enhancer.enhance(factor)
         else:
-            darken_amount = (1-progress)*2
-            target_image = g1
-
-        for i in range(GRID_WIDTH):
-            for j in range(GRID_HEIGHT):
-                target_image.darken(i, j, darken_amount)
-
-        return target_image
+            # 0.5 -> 0, 0.9 -> 0.8, 1 -> 1
+            factor = (progress-0.5)*2
+            enhancer = ImageEnhance.Brightness(img1)
+            return enhancer.enhance(factor)

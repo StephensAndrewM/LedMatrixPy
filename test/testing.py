@@ -2,9 +2,11 @@ from datetime import datetime
 from typing import Dict, List
 
 import requests
+from PIL import Image, ImageChops, ImageDraw  # type: ignore
+
+from abstractslide import AbstractSlide
 from deps import Dependencies
-from drawing import PixelGrid
-from PIL import Image, ImageChops  # type: ignore
+from drawing import default_image
 from requester import Endpoint, Requester
 from timesource import TimeSource
 
@@ -14,7 +16,8 @@ class FakeTimeSource(TimeSource):
 
     def set(self, now: datetime) -> None:
         if now.tzinfo is None:
-            print("Warning! Set the time zone on the testing datetime to match the real version.")
+            print(
+                "Warning! Set the time zone on the testing datetime to match the real version.")
         self.clock_time = now
 
     def now(self) -> datetime:
@@ -71,17 +74,23 @@ class TestDependencies(Dependencies):
         return self.requester
 
 
-def compare_to_golden(golden_image_name: str, actual_grid: PixelGrid) -> bool:
-    actual_img = actual_grid.as_image()
+def draw_and_compare(golden_image_name: str, slide: AbstractSlide) -> bool:
+    img = default_image()
+    slide.draw(ImageDraw.Draw(img))
+    return compare_to_golden(golden_image_name, img)
+
+
+def compare_to_golden(golden_image_name: str, actual_img: Image) -> bool:
     expected_img_filename = "test/data/golden/%s_golden.png" % golden_image_name
     try:
         with Image.open(expected_img_filename) as expected_img:
             diff = ImageChops.difference(actual_img, expected_img)
 
-            if list(actual_img.getdata()) == list(expected_img.getdata()):
+            if not diff.getbbox():
                 return True
             else:
                 print("Output differed from %s" % expected_img_filename)
+                diff.save("test/data/golden/%s_diff.png" % golden_image_name)
 
     except FileNotFoundError:
         print("Golden image %s does not exist" % expected_img_filename)

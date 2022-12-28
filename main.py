@@ -3,12 +3,15 @@ import logging
 from time import sleep
 from typing import List
 
+from PIL import Image, ImageDraw  # type: ignore
+
 from abstractslide import AbstractSlide
 from christmasslide import ChristmasSlide
 from config import Config, load_config
 from controller import Controller
 from deps import Dependencies
 from display import Display
+from drawing import default_image
 from imagewriter import write_grid_to_file
 from slideshow import Slideshow
 from timeslide import TimeSlide
@@ -41,8 +44,10 @@ def generate_images() -> None:
     deps = Dependencies()
     slide = WeatherSlide(deps, {})
     deps.get_requester().start()
-    sleep(10)
-    write_grid_to_file("WeatherSlide", slide.draw())
+    sleep(5)
+    img = default_image()
+    slide.draw(ImageDraw.Draw(img))
+    write_grid_to_file("WeatherSlide", img)
     deps.get_requester().stop()
 
 

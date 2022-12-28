@@ -1,8 +1,9 @@
 import datetime
 import unittest
-from test.testing import TestDependencies, compare_to_golden
+from test.testing import TestDependencies, draw_and_compare
 
 from dateutil import tz
+
 from weatherslide import WeatherSlide
 
 _DEFAULT_CONFIG = {
@@ -34,9 +35,8 @@ class WeatherSlideTest(unittest.TestCase):
                                          "weatherslide_forecast_evening.json")
 
         self.deps.get_requester().start()
-        grid = self.slide.draw()
 
-        self.assertTrue(compare_to_golden("WeatherSlide_evening", grid))
+        self.assertTrue(draw_and_compare("WeatherSlide_evening", self.slide))
 
     def test_render_afternoon(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
@@ -45,19 +45,17 @@ class WeatherSlideTest(unittest.TestCase):
                                          "weatherslide_forecast_afternoon.json")
 
         self.deps.get_requester().start()
-        grid = self.slide.draw()
 
-        self.assertTrue(compare_to_golden("WeatherSlide_afternoon", grid))
+        self.assertTrue(draw_and_compare("WeatherSlide_afternoon", self.slide))
 
     def test_render_forecast_error(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
                                          "weatherslide_observations.json")
 
         self.deps.get_requester().start()
-        grid = self.slide.draw()
 
-        self.assertTrue(compare_to_golden(
-            "WeatherSlide_missing_forecast", grid))
+        self.assertTrue(draw_and_compare(
+            "WeatherSlide_missing_forecast", self.slide))
 
     def test_render_forecast_error_soon_after_success(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
@@ -70,12 +68,11 @@ class WeatherSlideTest(unittest.TestCase):
             self.test_datetime + datetime.timedelta(minutes=60))
         self.deps.get_requester().clear_expectation(_DEFAULT_FORECAST_URL)
         self.deps.get_requester().start()
-        grid = self.slide.draw()
 
         # Slide should display the existing forecast, ignoring the error.
         # A dot should be displayed in the bottom right corner.
-        self.assertTrue(compare_to_golden(
-            "WeatherSlide_forecast_error_soon_after_success", grid))
+        self.assertTrue(draw_and_compare(
+            "WeatherSlide_forecast_error_soon_after_success", self.slide))
 
     def test_render_forecast_error_long_after_success(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
@@ -88,28 +85,25 @@ class WeatherSlideTest(unittest.TestCase):
             self.test_datetime + datetime.timedelta(hours=12))
         self.deps.get_requester().clear_expectation(_DEFAULT_FORECAST_URL)
         self.deps.get_requester().start()
-        grid = self.slide.draw()
 
         # Slide should not display a forecast because data is too old.
-        self.assertTrue(compare_to_golden(
-            "WeatherSlide_forecast_error_long_after_success", grid))
+        self.assertTrue(draw_and_compare(
+            "WeatherSlide_forecast_error_long_after_success", self.slide))
 
     def test_render_observations_error(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
                                          "weatherslide_forecast_afternoon.json")
 
         self.deps.get_requester().start()
-        grid = self.slide.draw()
 
-        self.assertTrue(compare_to_golden(
-            "WeatherSlide_missing_observations", grid))
+        self.assertTrue(draw_and_compare(
+            "WeatherSlide_missing_observations", self.slide))
 
     def test_render_all_error(self) -> None:
         self.deps.get_requester().start()
-        grid = self.slide.draw()
 
-        self.assertTrue(compare_to_golden(
-            "WeatherSlide_missing_everything", grid))
+        self.assertTrue(draw_and_compare(
+            "WeatherSlide_missing_everything", self.slide))
 
     def test_render_null_current_temp(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
@@ -118,7 +112,6 @@ class WeatherSlideTest(unittest.TestCase):
                                          "weatherslide_forecast_afternoon.json")
 
         self.deps.get_requester().start()
-        grid = self.slide.draw()
 
-        self.assertTrue(compare_to_golden(
-            "WeatherSlide_null_current_temp", grid))
+        self.assertTrue(draw_and_compare(
+            "WeatherSlide_null_current_temp", self.slide))

@@ -1,8 +1,9 @@
 import unittest
-from datetime import datetime
-from abstractslide import AbstractSlide
-from drawing import GREEN, RED, Align, PixelGrid
-from test.testing import TestDependencies, compare_to_golden
+from test.testing import compare_to_golden
+
+from PIL import ImageDraw  # type: ignore
+
+from drawing import GREEN, RED, Align, default_image, draw_string
 from transitions import FadeToBlack
 
 
@@ -24,11 +25,11 @@ class TimeSlideTest(unittest.TestCase):
         self._test_fade_to_black_at(1.0, "FadeToBlackTransition100p")
 
     def _test_fade_to_black_at(self, progress: float, name: str) -> None:
-        g0 = PixelGrid()
-        g0.draw_string("A" * 22, 0, 0, Align.LEFT, RED)
-        g1 = PixelGrid()
-        g1.draw_string("B" * 22, 0, 24, Align.LEFT, GREEN)
+        img0 = default_image()
+        draw_string(ImageDraw.Draw(img0), "A" * 22, 0, 0, Align.LEFT, RED)
+        img1 = default_image()
+        draw_string(ImageDraw.Draw(img1), "B" * 22, 0, 24, Align.LEFT, GREEN)
 
         t = FadeToBlack()
-        merged_grid = t.merge(progress, g0, g1)
+        merged_grid = t.merge(progress, img0, img1)
         self.assertTrue(compare_to_golden(name, merged_grid))

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from drawing import PixelGrid
+from PIL import ImageDraw  # type: ignore
 
 
 class AbstractSlide(ABC):
@@ -9,5 +9,5 @@ class AbstractSlide(ABC):
         return True
 
     @abstractmethod
-    def draw(self) -> PixelGrid:
+    def draw(self, img: ImageDraw) -> None:
         pass

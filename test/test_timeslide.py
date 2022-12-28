@@ -1,6 +1,6 @@
 import unittest
 from datetime import datetime
-from test.testing import TestDependencies, compare_to_golden
+from test.testing import TestDependencies, draw_and_compare
 
 from dateutil import tz
 
@@ -17,6 +17,4 @@ class TimeSlideTest(unittest.TestCase):
         deps.time_source.set(test_datetime)
 
         slide = TimeSlide(deps)
-        grid = slide.draw()
-
-        self.assertTrue(compare_to_golden("TimeSlide", grid))
+        self.assertTrue(draw_and_compare("TimeSlide", slide))
