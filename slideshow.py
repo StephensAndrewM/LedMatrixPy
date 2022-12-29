@@ -2,11 +2,11 @@ import logging
 import subprocess
 import time
 from datetime import datetime, timedelta
-from threading import Timer
+from threading import Lock, Timer
 from typing import List, Optional
 
 import requests
-from PIL import Image, ImageDraw  # type: ignore
+from PIL import ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide
 from config import Config
@@ -27,7 +27,9 @@ class Slideshow:
     current_slide: AbstractSlide
     prev_slide: AbstractSlide
     is_running: bool
+    advance_timer_lock: Lock
     advance_timer: Optional[Timer]
+    redraw_timer_lock: Lock
     redraw_timer: Optional[Timer]
 
     def __init__(self, config: Config, display: Display, requester: Requester, slides: List[AbstractSlide]) -> None:
@@ -43,7 +45,9 @@ class Slideshow:
         self.slides = slides
 
         self.is_running = False
+        self.advance_timer_lock = Lock()
         self.advance_timer = None
+        self.redraw_timer_lock = Lock()
         self.redraw_timer = None
         self.start()
 
@@ -68,13 +72,17 @@ class Slideshow:
         self.advance()
 
     def advance(self) -> None:
+        self.advance_timer_lock.acquire()
         self.advance_timer = Timer(self.advance_interval.seconds, self.advance)
         self.advance_timer.start()
+        self.advance_timer_lock.release()
 
+        self.redraw_timer_lock.acquire()
         if self.redraw_timer is not None:
             self.redraw_timer.cancel()
             self.redraw_timer.join()
             self.redraw_timer = None
+        self.redraw_timer_lock.release()
 
         # One slide must always be enabled to prevent an infinite loop.
         while True:
@@ -92,9 +100,11 @@ class Slideshow:
         self.draw_and_reschedule()
 
     def draw_and_reschedule(self) -> None:
+        self.redraw_timer_lock.acquire()
         self.redraw_timer = Timer(
             self.redraw_interval.seconds, self.draw_and_reschedule)
         self.redraw_timer.start()
+        self.redraw_timer_lock.release()
 
         self.draw_current_to_display()
 
@@ -125,14 +135,19 @@ class Slideshow:
             return
 
         # Cancel timers and ensure that their threads have terminated.
+        self.advance_timer_lock.acquire()
         if self.advance_timer is not None:
             self.advance_timer.cancel()
             self.advance_timer.join()
             self.advance_timer = None
+        self.advance_timer_lock.release()
+
+        self.redraw_timer_lock.acquire()
         if self.redraw_timer is not None:
             self.redraw_timer.cancel()
             self.redraw_timer.join()
             self.redraw_timer = None
+        self.redraw_timer_lock.release()
 
         self.display.clear()
         self.requester.stop()
