@@ -3,7 +3,7 @@ import logging
 from time import sleep
 from typing import List
 
-from PIL import Image, ImageDraw  # type: ignore
+from PIL import ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide
 from christmasslide import ChristmasSlide
@@ -16,6 +16,7 @@ from imagewriter import write_grid_to_file
 from slideshow import Slideshow
 from timeslide import TimeSlide
 from weatherslide import WeatherSlide
+from newyearslide import NewYearSlide
 
 parser = argparse.ArgumentParser(description='Run an LED Matrix slideshow.')
 parser.add_argument('--generate_images', action='store_true',
@@ -42,12 +43,12 @@ def main() -> None:
 
 def generate_images() -> None:
     deps = Dependencies()
-    slide = WeatherSlide(deps, {})
+    slide = NewYearSlide(deps)
     deps.get_requester().start()
     sleep(5)
     img = default_image()
     slide.draw(ImageDraw.Draw(img))
-    write_grid_to_file("WeatherSlide", img)
+    write_grid_to_file("NewYearSlide", img)
     deps.get_requester().stop()
 
 
@@ -74,6 +75,8 @@ def create_slides_from_config(config: Config, deps: Dependencies) -> List[Abstra
             slides.append(WeatherSlide(deps, options))
         elif type == "ChristmasSlide":
             slides.append(ChristmasSlide(deps))
+        elif type == "NewYearSlide":
+            slides.append(NewYearSlide(deps))
         else:
             logging.warning("Unknown slide type %s", slide_config["type"])
     return slides
