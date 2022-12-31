@@ -2,6 +2,7 @@ import logging
 import subprocess
 import time
 from datetime import datetime, timedelta
+from enum import Enum
 from threading import Lock, Timer
 from typing import List, Optional
 
@@ -16,9 +17,14 @@ from requester import Requester
 from transitions import FadeToBlack
 
 
+class DrawMode(Enum):
+    NONE = 0
+    SINGLE = 1
+    TRANSITION = 2
+
+
 class Slideshow:
     advance_interval: timedelta
-    redraw_interval: timedelta
     display: Display
     requester: Requester
     slides: List[AbstractSlide]
@@ -27,10 +33,10 @@ class Slideshow:
     current_slide: AbstractSlide
     prev_slide: AbstractSlide
     is_running: bool
-    advance_timer_lock: Lock
+    draw_mode: DrawMode
+    transition_start_time: datetime
+    slide_state_lock: Lock
     advance_timer: Optional[Timer]
-    redraw_timer_lock: Lock
-    redraw_timer: Optional[Timer]
 
     def __init__(self, config: Config, display: Display, requester: Requester, slides: List[AbstractSlide]) -> None:
         advance_seconds = config.get("slide_advance", 15)
@@ -38,17 +44,15 @@ class Slideshow:
         transition_millis = config.get("transition_millis", 1000)
         self.transition_interval = timedelta(milliseconds=transition_millis)
 
-        # TODO: Make this configurable per-slide.
-        self.redraw_interval = timedelta(seconds=1)
         self.display = display
         self.requester = requester
         self.slides = slides
 
         self.is_running = False
-        self.advance_timer_lock = Lock()
+        self.draw_mode = DrawMode.SINGLE
+        self.slide_state_lock = Lock()
         self.advance_timer = None
-        self.redraw_timer_lock = Lock()
-        self.redraw_timer = None
+
         self.start()
 
     def start(self) -> None:
@@ -59,7 +63,7 @@ class Slideshow:
 
         # Draw the welcome slide while waiting for data
         self.current_slide = WelcomeSlide()
-        self.draw_current_to_display()
+        self.draw_single()
 
         # Do some initial requests to cover for hardware limitations.
         self._wait_for_network()
@@ -70,19 +74,27 @@ class Slideshow:
         self.is_running = True
 
         self.advance()
+        self.draw_loop()
+
+    def draw_loop(self) -> None:
+        while self.is_running:
+            self.slide_state_lock.acquire()
+            if self.draw_mode == DrawMode.SINGLE:
+                self.draw_single()
+            elif self.draw_mode == DrawMode.TRANSITION:
+                self.draw_transition()
+            else:
+                self.display.clear()
+                self.slide_state_lock.release()
+                return
+            self.slide_state_lock.release()
 
     def advance(self) -> None:
-        self.advance_timer_lock.acquire()
+        self.slide_state_lock.acquire()
+
+        # Schedule the next advance event.
         self.advance_timer = Timer(self.advance_interval.seconds, self.advance)
         self.advance_timer.start()
-        self.advance_timer_lock.release()
-
-        self.redraw_timer_lock.acquire()
-        if self.redraw_timer is not None:
-            self.redraw_timer.cancel()
-            self.redraw_timer.join()
-            self.redraw_timer = None
-        self.redraw_timer_lock.release()
 
         # One slide must always be enabled to prevent an infinite loop.
         while True:
@@ -94,70 +106,57 @@ class Slideshow:
         self.prev_slide = self.current_slide
         self.current_slide = self.slides[self.current_slide_id]
 
-        # Transition starts and then blocks periodic redraw until complete.
-        self.run_transition()
+        self.draw_mode = DrawMode.TRANSITION
+        self.transition_start_time = datetime.now()
+        self.slide_state_lock.release()
 
-        self.draw_and_reschedule()
-
-    def draw_and_reschedule(self) -> None:
-        self.redraw_timer_lock.acquire()
-        self.redraw_timer = Timer(
-            self.redraw_interval.seconds, self.draw_and_reschedule)
-        self.redraw_timer.start()
-        self.redraw_timer_lock.release()
-
-        self.draw_current_to_display()
-
-    def draw_current_to_display(self) -> None:
+    def draw_single(self) -> None:
         img = default_image()
         self.current_slide.draw(ImageDraw.Draw(img))
         self.display.draw(img)
 
-    def run_transition(self) -> None:
-        start_time = datetime.now()
+    def draw_transition(self) -> None:
         # This can be adjusted as more transitions are defined.
         t = FadeToBlack()
 
-        while True:
-            elapsed_time = datetime.now() - start_time
-            progress = elapsed_time / self.transition_interval
-            if progress >= 1:
-                break
+        elapsed_time = datetime.now() - self.transition_start_time
+        progress = elapsed_time / self.transition_interval
+        if progress < 1:
             prev_img = default_image()
             current_img = default_image()
             self.prev_slide.draw(ImageDraw.Draw(prev_img))
             self.current_slide.draw(ImageDraw.Draw(current_img))
             merged_grid = t.merge(progress, prev_img, current_img)
             self.display.draw(merged_grid)
+        else:
+            # Switch mode back to regular once transition is complete.
+            self.draw_mode = DrawMode.SINGLE
 
     def stop(self) -> None:
         if not self.is_running:
             return
 
         # Cancel timers and ensure that their threads have terminated.
-        self.advance_timer_lock.acquire()
+        self.slide_state_lock.acquire()
         if self.advance_timer is not None:
             self.advance_timer.cancel()
             self.advance_timer.join()
             self.advance_timer = None
-        self.advance_timer_lock.release()
 
-        self.redraw_timer_lock.acquire()
-        if self.redraw_timer is not None:
-            self.redraw_timer.cancel()
-            self.redraw_timer.join()
-            self.redraw_timer = None
-        self.redraw_timer_lock.release()
+        # Stops the main drawing loop.
+        self.draw_mode = DrawMode.NONE
+        self.slide_state_lock.release()
 
-        self.display.clear()
         self.requester.stop()
         self.is_running = False
 
     def freeze(self) -> None:
+        self.slide_state_lock.acquire()
         if self.advance_timer is not None:
             self.advance_timer.cancel()
             self.advance_timer.join()
             self.advance_timer = None
+        self.slide_state_lock.release()
 
     def unfreeze(self) -> None:
         if self.advance_timer is not None and not self.advance_timer.isAlive():
