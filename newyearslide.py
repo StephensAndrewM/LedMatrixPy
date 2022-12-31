@@ -13,7 +13,7 @@ from drawing import (AQUA, BLUE, GREEN, ORANGE, PURPLE, RED, WHITE, YELLOW,
                      Align, Color, draw_string)
 from timesource import TimeSource
 
-_FPS = 8.0
+_FPS = 30.0
 _FIREWORK_COLORS = [AQUA, RED, GREEN, YELLOW, PURPLE, ORANGE]
 
 
@@ -38,8 +38,8 @@ class Ember:
     def apply_physics(self) -> None:
         self.x += self.xspeed
         self.y += self.yspeed
-        self.yspeed += (1.8 / _FPS)  # gravity
-        self.xspeed *= 0.98  # friction
+        self.yspeed += (2.3 / _FPS)  # gravity
+        self.xspeed *= 0.985  # friction
 
     def is_visible(self) -> bool:
         return self.y < GRID_HEIGHT
@@ -68,7 +68,7 @@ class NewYearSlide(AbstractSlide):
         self.ember_lock = Lock()
         self.embers = []
         self._update_embers()
-        self._create_firework()
+        self._schedule_create_firework()
 
     def draw(self, img: ImageDraw) -> None:
         # Draw embers first so they appear behind the text.
@@ -81,17 +81,17 @@ class NewYearSlide(AbstractSlide):
         diff = self.target_datetime - now
         diff_seconds = diff.total_seconds()
 
-        diff_string = '{:02} : {:02} : {:02}'.format(
-            int(diff_seconds // 3600), int(diff_seconds % 3600 // 60), int(diff_seconds % 60))
-
-        # Don't count in reverse
+        # After midnight
         if diff_seconds < 0:
-            diff_string = "00 : 00 : 00"
+            draw_string(img, "HAPPY %d!" % self.target_year,
+                        64, 12, Align.CENTER, YELLOW)
+        else:
+            diff_string = '{:02} : {:02} : {:02}'.format(
+                int(diff_seconds // 3600), int(diff_seconds % 3600 // 60), int(diff_seconds % 60))
 
-        draw_string(img, diff_string, 64, 6, Align.CENTER, WHITE)
-
-        draw_string(img, "UNTIL %d" % self.target_year,
-                    64, 18, Align.CENTER, YELLOW)
+            draw_string(img, diff_string, 64, 6, Align.CENTER, WHITE)
+            draw_string(img, "UNTIL %d" % self.target_year,
+                        64, 18, Align.CENTER, YELLOW)
 
     def _update_embers(self) -> None:
         self.ember_lock.acquire()
@@ -106,26 +106,32 @@ class NewYearSlide(AbstractSlide):
 
     def _create_firework(self) -> None:
         x = random.choice([*range(8, 32)] + [*range(96, 120)])
-        y = random.choice(range(4, 20))
+        y = random.choice(range(10, 28))
         c = random.choice(_FIREWORK_COLORS)
 
         new_embers = []
 
-        new_embers.append(Ember(c, x, y, 0, 0))
-        for velocity in [0.5, 1.0, 1.5]:
+        velocity_base = 0.25
+        yspeed_offset = -1.2  # Simulates launch velocity
+
+        new_embers.append(Ember(c, x, y, 0, + yspeed_offset))
+        for velocity_multiplier in [1, 2, 3]:
+            velocity = velocity_base * velocity_multiplier
             embers_in_ring = 16
-            if (velocity <= 0.5):
+            if (velocity <= velocity_base):
                 embers_in_ring = 8
             for i in range(0, embers_in_ring):
                 angle = (float(i) / (float(embers_in_ring) / 2)) * math.pi
                 xspeed = math.sin(angle) * velocity
-                yspeed = math.cos(angle) * velocity
+                yspeed = (math.cos(angle) * velocity) + yspeed_offset
                 new_embers.append(Ember(c, x, y, xspeed, yspeed))
 
         self.ember_lock.acquire()
         self.embers += new_embers
         self.ember_lock.release()
 
-        # Create another firework sometime in the future.
+        self._schedule_create_firework()
+
+    def _schedule_create_firework(self) -> None:
         seconds_to_next = random.randint(5, 20)
         Timer(seconds_to_next, self._create_firework).start()
