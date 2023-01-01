@@ -1,7 +1,6 @@
 import datetime
 import math
 import random
-from threading import Lock, Timer
 from typing import List
 
 from PIL import ImageDraw  # type: ignore
@@ -50,8 +49,9 @@ class NewYearSlide(AbstractSlide):
     target_year: int
     target_datetime: datetime.datetime
 
-    ember_lock: Lock
     embers: List[Ember]
+    next_ember_update: datetime.datetime
+    next_firework: datetime.datetime
 
     def __init__(self, deps: Dependencies):
         self.time_source = deps.get_time_source()
@@ -64,18 +64,17 @@ class NewYearSlide(AbstractSlide):
         self.target_datetime = datetime.datetime(
             self.target_year, 1, 1, 0, 0, 0, tzinfo=now.tzinfo)
 
-        # Start loops that simulate physics and create fireworks.
-        self.ember_lock = Lock()
         self.embers = []
-        self._update_embers()
-        self._schedule_create_firework()
+        self.next_ember_update = self.time_source.now()
+        self.next_firework = self.time_source.now() + datetime.timedelta(seconds=1)
 
     def draw(self, img: ImageDraw) -> None:
+        self._update_embers()
+        self._create_firework()
+
         # Draw embers first so they appear behind the text.
-        self.ember_lock.acquire()
         for ember in self.embers:
             ember.draw(img)
-        self.ember_lock.release()
 
         now = self.time_source.now()
         diff = self.target_datetime - now
@@ -94,17 +93,21 @@ class NewYearSlide(AbstractSlide):
                         64, 18, Align.CENTER, YELLOW)
 
     def _update_embers(self) -> None:
-        self.ember_lock.acquire()
+        if self.time_source.now() <= self.next_ember_update:
+            return
+
         for ember in self.embers:
             ember.apply_physics()
         # Garbage-collect the embers.
         self.embers = [e for e in self.embers if e.is_visible()]
-        self.ember_lock.release()
 
-        # Update physics a fixed number of times per second.
-        Timer(1/_FPS, self._update_embers).start()
+        self.next_ember_update = self.time_source.now(
+        ) + datetime.timedelta(seconds=(1/_FPS))
 
     def _create_firework(self) -> None:
+        if self.time_source.now() <= self.next_firework:
+            return
+
         x = random.choice([*range(8, 32)] + [*range(96, 120)])
         y = random.choice(range(10, 28))
         c = random.choice(_FIREWORK_COLORS)
@@ -126,12 +129,8 @@ class NewYearSlide(AbstractSlide):
                 yspeed = (math.cos(angle) * velocity) + yspeed_offset
                 new_embers.append(Ember(c, x, y, xspeed, yspeed))
 
-        self.ember_lock.acquire()
         self.embers += new_embers
-        self.ember_lock.release()
 
-        self._schedule_create_firework()
-
-    def _schedule_create_firework(self) -> None:
         seconds_to_next = random.randint(5, 20)
-        Timer(seconds_to_next, self._create_firework).start()
+        self.next_firework = self.time_source.now(
+        ) + datetime.timedelta(seconds=seconds_to_next)
