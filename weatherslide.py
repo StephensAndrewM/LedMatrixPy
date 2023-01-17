@@ -10,8 +10,7 @@ from PIL import ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide
 from deps import Dependencies
-from drawing import (GRAY, RED, WHITE, YELLOW, Align, Color,
-                     draw_glyph_by_name, draw_string)
+from drawing import AQUA, GRAY, GREEN, RED, WHITE, YELLOW, Align, Color, draw_glyph_by_name, draw_string
 from requester import Endpoint
 from timesource import TimeSource
 
@@ -262,41 +261,46 @@ class WeatherSlide(AbstractSlide):
         pass
 
     def draw(self, img: ImageDraw) -> None:
+        now = self.time_source.now()
+
         observations_time_delta = self.time_source.now() - self.last_observations_retrieval
+        time_y_offset = 0
         if (self.current_temp is not None
                 and observations_time_delta <= _OBSERVATIONS_STALENESS_THRESHOLD):
-            self._draw_weather_box(img, 21, "NOW", YELLOW, "%d°" %
-                                   self.current_temp, self.current_icon)
+            if self.current_icon:
+                draw_glyph_by_name(img, self.current_icon, 0, 16, WHITE)
+            draw_string(img, "%d°" % self.current_temp,
+                        18, 20, Align.LEFT, WHITE)
+
             if (observations_time_delta > _OBSERVATIONS_REFRESH_INTERVAL*2):
                 img.point((0, 31), RED)
-        else:
-            draw_string(img, "NOW", 21, 0, Align.CENTER, GRAY)
-            draw_string(img, "?", 21, 16, Align.CENTER, GRAY)
+        else: 
+            # Push down the date and time if there we don't have current conditions.
+            time_y_offset = 8
+
+        date_string = now.strftime("%a %b %-d").upper()
+        draw_string(img, date_string, 0, time_y_offset+0, Align.LEFT, AQUA)
+        time_string = now.strftime("%-I:%M %p")
+        draw_string(img, time_string, 0, time_y_offset+8, Align.LEFT, AQUA)
 
         forecast_time_delta = self.time_source.now() - self.last_forecast_retrieval
         if (self.forecast1 is not None and self.forecast2 is not None
                 and forecast_time_delta <= _FORECAST_STALENESS_THRESHOLD):
-            self._draw_forecast(img, 63, self.forecast1)
-            self._draw_forecast(img, 105, self.forecast2)
+            self._draw_forecast(img, 0, self.forecast1)
+            self._draw_forecast(img, 16, self.forecast2)
             if (forecast_time_delta > _FORECAST_REFRESH_INTERVAL*2):
                 img.point((127, 31), RED)
-        else:
-            draw_string(img, "FORECAST", 86, 8, Align.CENTER, GRAY)
-            draw_string(img, "MISSING", 86, 16, Align.CENTER, GRAY)
 
-    def _draw_forecast(self, img: ImageDraw, x: int, forecast: DailyForecast) -> None:
+    def _draw_forecast(self, img: ImageDraw, y: int, forecast: DailyForecast) -> None:
         forecast_date = forecast.date.strftime("%a").upper()
+        draw_string(img, forecast_date, 81, y, Align.LEFT, YELLOW)
+
         if forecast.high_temp is not None:
             forecast_temp = "%d°/%d°" % (forecast.high_temp,
                                          forecast.low_temp)
         else:
             forecast_temp = "%d°" % (forecast.low_temp)
-        self._draw_weather_box(
-            img, x, forecast_date, WHITE, forecast_temp, forecast.icon)
+        draw_string(img, forecast_temp, 81, y+8, Align.LEFT, WHITE)
 
-    def _draw_weather_box(self, img: ImageDraw, x: int, date: str, date_color: Color,
-                          temperature: str, icon: Optional[str]) -> None:
-        draw_string(img, temperature, x, 0, Align.CENTER, WHITE)
-        if icon:
-            draw_glyph_by_name(img, icon, x-8, 8, WHITE)
-        draw_string(img, date, x, 25, Align.CENTER, date_color)
+        if forecast.icon:
+            draw_glyph_by_name(img, forecast.icon, 64, y, WHITE)
