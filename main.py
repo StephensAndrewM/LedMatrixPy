@@ -10,19 +10,21 @@ from christmasslide import ChristmasSlide
 from config import Config, load_config
 from controller import Controller
 from deps import Dependencies
-from display import Display
+from display import Display, MatrixDisplay
 from drawing import default_image
 from imagewriter import write_grid_to_file
+from newyearslide import NewYearSlide
 from slideshow import Slideshow
 from timeslide import TimeSlide
 from weatherslide import WeatherSlide
-from newyearslide import NewYearSlide
 
 parser = argparse.ArgumentParser(description='Run an LED Matrix slideshow.')
 parser.add_argument('--generate_images', action='store_true',
                     help='Generates slide images instead of running as slideshow.')
 parser.add_argument('--debug_log', action='store_true',
                     help='Prints debug-level logging information.')
+parser.add_argument('--fake_display', action='store_true',
+                    help='Uses a no-op display instead of expecting hardware.')
 
 
 def main() -> None:
@@ -38,25 +40,25 @@ def main() -> None:
     if args.generate_images:
         generate_images()
     else:
-        run_slideshow()
+        run_slideshow(args.fake_display)
 
 
 def generate_images() -> None:
     deps = Dependencies()
-    slide = NewYearSlide(deps)
+    slide = WeatherSlide(deps, {})
     deps.get_requester().start()
     sleep(5)
     img = default_image()
     slide.draw(ImageDraw.Draw(img))
-    write_grid_to_file("NewYearSlide", img)
+    write_grid_to_file("WeatherSlide", img)
     deps.get_requester().stop()
 
 
-def run_slideshow() -> None:
+def run_slideshow(fake_display: bool) -> None:
     config = load_config()
     deps = Dependencies()
     slides = create_slides_from_config(config, deps)
-    display = Display()
+    display = Display() if fake_display else MatrixDisplay()
     slideshow = Slideshow(config, display, deps.get_requester(), slides)
 
     controller = Controller(slideshow)

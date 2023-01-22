@@ -3,7 +3,7 @@ import subprocess
 import time
 from datetime import datetime, timedelta
 from enum import Enum
-from threading import Lock, Timer
+from threading import Lock, Thread, Timer
 from typing import List, Optional
 
 import requests
@@ -36,6 +36,7 @@ class Slideshow:
     draw_mode: DrawMode
     transition_start_time: datetime
     slide_state_lock: Lock
+    draw_thread: Thread
     advance_timer: Optional[Timer]
 
     def __init__(self, config: Config, display: Display, requester: Requester, slides: List[AbstractSlide]) -> None:
@@ -74,10 +75,12 @@ class Slideshow:
         self.is_running = True
 
         self.advance()
-        self.draw_loop()
+
+        self.draw_thread = Thread(target=self.draw_loop)
+        self.draw_thread.start()
 
     def draw_loop(self) -> None:
-        while self.is_running:
+        while True:
             self.slide_state_lock.acquire()
             if self.draw_mode == DrawMode.SINGLE:
                 self.draw_single()
@@ -97,12 +100,19 @@ class Slideshow:
         self.advance_timer.start()
 
         # One slide must always be enabled to prevent an infinite loop.
+        next_slide_id = self.current_slide_id
         while True:
-            self.current_slide_id += 1
-            self.current_slide_id %= len(self.slides)
-            if self.slides[self.current_slide_id].is_enabled():
+            next_slide_id += 1
+            next_slide_id %= len(self.slides)
+            if self.slides[next_slide_id].is_enabled():
                 break
 
+        # No transition needed if we're only displaying one slide.
+        if self.current_slide_id == next_slide_id:
+            self.slide_state_lock.release()
+            return
+
+        self.current_slide_id = next_slide_id
         self.prev_slide = self.current_slide
         self.current_slide = self.slides[self.current_slide_id]
 
@@ -146,6 +156,7 @@ class Slideshow:
         # Stops the main drawing loop.
         self.draw_mode = DrawMode.NONE
         self.slide_state_lock.release()
+        self.draw_thread.join()
 
         self.requester.stop()
         self.is_running = False
@@ -159,7 +170,7 @@ class Slideshow:
         self.slide_state_lock.release()
 
     def unfreeze(self) -> None:
-        if self.advance_timer is not None and not self.advance_timer.isAlive():
+        if self.advance_timer is None:
             self.advance()
 
     def _wait_for_network(self) -> None:

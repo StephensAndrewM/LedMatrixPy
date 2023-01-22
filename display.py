@@ -1,8 +1,18 @@
+from abc import ABC, abstractmethod
+
 from PIL import Image  # type: ignore
 from rgbmatrix import RGBMatrix, RGBMatrixOptions  # type: ignore
 
 
-class Display:
+class Display():
+    def draw(self, img: Image) -> None:
+        pass
+
+    def clear(self) -> None:
+        pass
+
+
+class MatrixDisplay(Display):
     matrix: RGBMatrix
 
     def __init__(self) -> None:
