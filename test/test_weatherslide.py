@@ -48,7 +48,7 @@ class WeatherSlideTest(unittest.TestCase):
 
         self.assertTrue(draw_and_compare("WeatherSlide_afternoon", self.slide))
 
-    def test_render_forecast_error(self) -> None:
+    def test_render_missing_forecast(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
                                          "weatherslide_observations.json")
 
