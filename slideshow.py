@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timedelta
 from enum import Enum
 from threading import Lock, Thread, Timer
-from typing import List, Optional
+from typing import List
 
 import requests
 from PIL import ImageDraw  # type: ignore
@@ -18,13 +18,13 @@ from transitions import FadeToBlack
 
 
 class DrawMode(Enum):
-    NONE = 0
     SINGLE = 1
     TRANSITION = 2
 
 
 class Slideshow:
     advance_interval: timedelta
+    transition_interval: timedelta
     display: Display
     requester: Requester
     slides: List[AbstractSlide]
@@ -34,10 +34,11 @@ class Slideshow:
     prev_slide: AbstractSlide
     is_running: bool
     draw_mode: DrawMode
-    transition_start_time: datetime
+    # Guards critical state like like slide ID and draw mode.
     slide_state_lock: Lock
+    advance_timer: Timer
     draw_thread: Thread
-    advance_timer: Optional[Timer]
+    transition_start_time: datetime
 
     def __init__(self, config: Config, display: Display, requester: Requester, slides: List[AbstractSlide]) -> None:
         advance_seconds = config.get("slide_advance", 15)
@@ -52,13 +53,14 @@ class Slideshow:
         self.is_running = False
         self.draw_mode = DrawMode.SINGLE
         self.slide_state_lock = Lock()
-        self.advance_timer = None
 
         self.start()
 
     def start(self) -> None:
         if self.is_running:
             return
+
+        self.is_running = True
 
         self.current_slide_id = -1
 
@@ -70,26 +72,19 @@ class Slideshow:
         self._wait_for_network()
         self._sync_system_time()
 
-        # Starts data requesting loop, returning once initial requests are complete.
+        # Start requester, advance interval, and main drawing thread.
         self.requester.start()
-        self.is_running = True
-
         self.advance()
-
         self.draw_thread = Thread(target=self.draw_loop)
         self.draw_thread.start()
 
     def draw_loop(self) -> None:
-        while True:
+        while self.is_running:
             self.slide_state_lock.acquire()
             if self.draw_mode == DrawMode.SINGLE:
                 self.draw_single()
             elif self.draw_mode == DrawMode.TRANSITION:
                 self.draw_transition()
-            else:
-                self.display.clear()
-                self.slide_state_lock.release()
-                return
             self.slide_state_lock.release()
 
     def advance(self) -> None:
@@ -146,31 +141,25 @@ class Slideshow:
         if not self.is_running:
             return
 
-        # Cancel timers and ensure that their threads have terminated.
-        self.slide_state_lock.acquire()
-        if self.advance_timer is not None:
-            self.advance_timer.cancel()
-            self.advance_timer.join()
-            self.advance_timer = None
-
-        # Stops the main drawing loop.
-        self.draw_mode = DrawMode.NONE
-        self.slide_state_lock.release()
-        self.draw_thread.join()
-
-        self.requester.stop()
         self.is_running = False
 
+        # Cancel timers and ensure the thread has terminated.
+        self.advance_timer.cancel()
+        self.advance_timer.join()
+
+        self.requester.stop()
+
+        # Change in is_running should stop the draw thread.
+        self.draw_thread.join()
+        self.display.clear()
+
     def freeze(self) -> None:
-        self.slide_state_lock.acquire()
-        if self.advance_timer is not None:
+        if self.is_running and self.advance_timer.is_alive():
             self.advance_timer.cancel()
             self.advance_timer.join()
-            self.advance_timer = None
-        self.slide_state_lock.release()
 
     def unfreeze(self) -> None:
-        if self.advance_timer is None:
+        if self.is_running and not self.advance_timer.is_alive():
             self.advance()
 
     def _wait_for_network(self) -> None:
