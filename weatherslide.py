@@ -165,11 +165,13 @@ class WeatherSlide(AbstractSlide):
                 "Forecast is too old. Update time is %s", update_time)
             return False
 
+        list_of_periods = [i["endTime"] for i in data["periods"]]
+
         forecast_tonight = self._get_forecast_with_end_time(
             1, 6, data["periods"])
         if forecast_tonight is None:
             logging.warning(
-                "Could not find forecast periods for tonight at %s in %s", now, data["periods"])
+                "Could not find forecast periods for tonight at %s in %s", now, list_of_periods)
             return False
 
         forecast1 = None
@@ -179,7 +181,7 @@ class WeatherSlide(AbstractSlide):
                 0, 18, data["periods"])
             if forecast_today is None:
                 logging.warning(
-                    "Could not find forecast periods for today at %s in %s", now, data["periods"])
+                    "Could not find forecast periods for today at %s in %s", now, list_of_periods)
                 return False
 
             forecast1 = DailyForecast(
@@ -201,7 +203,7 @@ class WeatherSlide(AbstractSlide):
             2, 6, data["periods"])
         if forecast_tomorrow is None or forecast_tomorrow_night is None:
             logging.warning(
-                "Could not find forecast periods for tomorrow or tomorrow night at %s in %s", now, data["periods"])
+                "Could not find forecast periods for tomorrow or tomorrow night at %s in %s", now, list_of_periods)
             return False
 
         # Assign all values at end in case an error returns otherwise.
@@ -219,13 +221,14 @@ class WeatherSlide(AbstractSlide):
     def _get_forecast_with_end_time(self, date_offset: int, hour: int,
                                     periods: List[Dict[str, Any]]) -> Optional[ForecastPeriod]:
         now = self.time_source.now()
-        local_timezone = now.astimezone().tzinfo
+        # End times will always be at 6 AM or 6 PM (regardless of time zone).
         end_time = datetime.datetime(
-            now.year, now.month, now.day, hour, 0, 0, 0, local_timezone) + datetime.timedelta(days=date_offset)
+            now.year, now.month, now.day, hour, 0, 0, 0) + datetime.timedelta(days=date_offset)
 
         for period in periods:
+            # Timezone needs to be removed because it can be unpredictable when DST changes.
             forecast_end_time = datetime.datetime.fromisoformat(
-                period["endTime"])
+                period["endTime"]).replace(tzinfo=None)
             if forecast_end_time == end_time:
                 if period["temperature"] is None:
                     return None
@@ -234,7 +237,7 @@ class WeatherSlide(AbstractSlide):
                     temperature=period["temperature"]
                 )
         logging.warning(
-            "Could not find forecast with start time %s", end_time)
+            "Could not find forecast with end time %s", end_time)
         return None
 
     def _celsius_to_fahrenheit(self, celsius: float) -> float:
