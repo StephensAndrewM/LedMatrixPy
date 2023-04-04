@@ -83,6 +83,9 @@ class ChristmasSlide(AbstractSlide):
     def is_enabled(self) -> bool:
         return self.christmas_date > self.time_source.now()
 
+    def get_dimensions(self) -> Tuple[int, int]:
+        return (128, 32)
+
     def draw(self, img: ImageDraw) -> None:
         self._draw_tree(img, 18, 2)
         self._draw_countdown(img, 82)

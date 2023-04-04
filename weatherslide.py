@@ -3,14 +3,15 @@ import logging
 import re
 from dataclasses import dataclass
 from json import JSONDecodeError
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 from PIL import ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide
 from deps import Dependencies
-from drawing import AQUA, GRAY, WHITE, YELLOW, Align, draw_glyph_by_name, draw_string
+from drawing import (AQUA, GRAY, WHITE, YELLOW, Align, draw_glyph_by_name,
+                     draw_string)
 from requester import Endpoint
 from timesource import TimeSource
 
@@ -119,6 +120,9 @@ class WeatherSlide(AbstractSlide):
             error_callback=self.handle_forecast_error,
             headers=_NWS_HEADERS,
         ))
+
+    def get_dimensions(self) -> Tuple[int, int]:
+        return (128, 32)
 
     def parse_observations(self, response: requests.models.Response) -> bool:
         try:

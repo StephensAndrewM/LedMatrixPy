@@ -13,9 +13,7 @@ from deps import Dependencies
 from display import Display, MatrixDisplay
 from drawing import default_image
 from imagewriter import write_grid_to_file
-from newyearslide import NewYearSlide
 from slideshow import Slideshow
-from timeslide import TimeSlide
 from weatherslide import WeatherSlide
 
 parser = argparse.ArgumentParser(description='Run an LED Matrix slideshow.')
@@ -71,14 +69,10 @@ def create_slides_from_config(config: Config, deps: Dependencies) -> List[Abstra
         type = slide_config.get("type", "")
         options = slide_config.get("options", {})
 
-        if type == "TimeSlide":
-            slides.append(TimeSlide(deps))
-        elif type == "WeatherSlide":
+        if type == "WeatherSlide":
             slides.append(WeatherSlide(deps, options))
         elif type == "ChristmasSlide":
             slides.append(ChristmasSlide(deps))
-        elif type == "NewYearSlide":
-            slides.append(NewYearSlide(deps))
         else:
             logging.warning("Unknown slide type %s", slide_config["type"])
     return slides

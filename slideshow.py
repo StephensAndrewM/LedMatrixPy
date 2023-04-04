@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timedelta
 from enum import Enum
 from threading import Lock, Thread, Timer
-from typing import List
+from typing import List, Tuple
 
 import requests
 from PIL import ImageDraw  # type: ignore
@@ -186,6 +186,9 @@ class Slideshow:
 
 
 class WelcomeSlide(AbstractSlide):
+
+    def get_dimensions(self) -> Tuple[int, int]:
+        return (128, 32)
 
     def draw(self, img: ImageDraw) -> None:
         draw_string(img, "HELLO!", 64, 2, Align.CENTER, AQUA)
