@@ -107,7 +107,9 @@ class Slideshow:
             merged_img = t.merge(progress, prev_img, current_img)
             output_img.paste(merged_img)
         else:
-            # Switch mode back to regular once transition is complete.
+            # Transition is complete, just draw the current slide.
+            # We need to call this now to avoid a flicker on this frame.
+            self.draw_single_frame(output_img)
             self.in_transition = False
 
     def stop(self) -> None:
