@@ -8,7 +8,7 @@
     },
     "rotating_slides": [
         {
-            "type": "WeatherSlide",
+            "type": "ForecastSlide",
             "options": {
                 "forecast_office": "BOX/69,76"
             }

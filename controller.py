@@ -10,6 +10,7 @@ class ControllerRequestHandler(BaseHTTPRequestHandler):
         if self.path == "/start":
             logging.info("Starting show")
             self.server.show.start()  # type: ignore
+            self.server.show.startup_complete()
         elif self.path == "/stop":
             logging.info("Stopping show")
             self.server.show.stop()  # type: ignore

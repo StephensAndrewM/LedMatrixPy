@@ -18,9 +18,10 @@ class WelcomeSlide(AbstractSlide):
     def get_type(self) -> SlideType:
         return SlideType.FULL_WIDTH
 
-    def draw(self, img: ImageDraw) -> None:
-        draw_string(img, "HELLO!", 64, 2, Align.CENTER, AQUA)
-        draw_string(img, "ANDREW'S LED MATRIX", 64, 16, Align.CENTER, YELLOW)
+    def draw(self, img: Image) -> None:
+        draw = ImageDraw.Draw(img)
+        draw_string(draw, "HELLO!", 64, 2, Align.CENTER, AQUA)
+        draw_string(draw, "ANDREW'S LED MATRIX", 64, 16, Align.CENTER, YELLOW)
 
 
 class SplitScreenSlide(AbstractSlide):
