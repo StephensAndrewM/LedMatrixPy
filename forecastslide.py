@@ -37,6 +37,7 @@ class ForecastSlide(AbstractSlide):
 
     last_forecast_retrieval: datetime.datetime
     forecasts: List[DailyForecast]
+    display_date_offset: int
 
     def __init__(self, deps: Dependencies, options: Dict[str, str]) -> None:
         self.time_source = deps.get_time_source()
@@ -45,6 +46,7 @@ class ForecastSlide(AbstractSlide):
         self.last_forecast_retrieval = datetime.datetime.min.replace(
             tzinfo=local_timezone)
         self.forecasts = list()
+        self.display_date_offset = options.get("date_offset", 0)
 
         forecast_office = options.get("forecast_office", "BOX/69,76")
         deps.get_requester().add_endpoint(Endpoint(
@@ -97,11 +99,15 @@ class ForecastSlide(AbstractSlide):
                 return False
             processed_forecasts.insert(0, processed_forecast)
 
-        for i in range(1, 4):
+        for i in range(1, int(len(data["periods"])/2)):
             processed_forecast = self._create_forecast(i, data["periods"])
             if processed_forecast is None:
                 return False
             processed_forecasts.insert(i, processed_forecast)
+
+        # The data didn't go far enough to display the requested date offset.
+        if self.display_date_offset+2 > len(processed_forecasts):
+            return False
 
         # Assign all values at end in case an error returns otherwise.
         self.last_forecast_retrieval = self.time_source.now()
@@ -154,8 +160,10 @@ class ForecastSlide(AbstractSlide):
         draw = ImageDraw.Draw(img)
         forecast_time_delta = self.time_source.now() - self.last_forecast_retrieval
         if forecast_time_delta <= _FORECAST_STALENESS_THRESHOLD:
-            self._draw_forecast(draw, 0, 0, self.forecasts[0])
-            self._draw_forecast(draw, 0, 16, self.forecasts[1])
+            self._draw_forecast(
+                draw, 0, 0, self.forecasts[self.display_date_offset])
+            self._draw_forecast(
+                draw, 0, 16, self.forecasts[self.display_date_offset+1])
 
             # Show a subtle indicator that this data is mildly stale.
             if (forecast_time_delta > _FORECAST_REFRESH_INTERVAL*2):

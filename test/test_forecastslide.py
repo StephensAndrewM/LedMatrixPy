@@ -44,11 +44,21 @@ class ForecastSlideTest(unittest.TestCase):
             "ForecastSlide_afternoon", self.slide))
 
     def test_render_missing_forecast(self) -> None:
-
         self.deps.get_requester().start()
 
         self.assertTrue(draw_and_compare(
             "ForecastSlide_missing_forecast", self.slide))
+
+    def test_render_date_offset(self) -> None:
+        self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
+                                         "forecastslide_afternoon.json")
+
+        config_with_offset = _DEFAULT_CONFIG.copy()
+        config_with_offset["date_offset"] = 2
+        slide_with_offset = ForecastSlide(self.deps, config_with_offset)
+        self.deps.get_requester().start()
+        self.assertTrue(draw_and_compare(
+            "ForecastSlide_with_offset", slide_with_offset))
 
     def test_render_forecast_error_soon_after_success(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
