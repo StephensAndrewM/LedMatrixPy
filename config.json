@@ -1,16 +1,15 @@
 {
     "slide_advance": 15,
-    "slides": [
-        {
-            "type": "TimeSlide"
-        },
-        {
-            "type": "ChristmasSlide"
-        },
+    "static_slide": {
+        "type": "TimeAndTemperatureSlide",
+        "options": {
+            "observations_office": "KBOS"
+        }
+    },
+    "rotating_slides": [
         {
             "type": "WeatherSlide",
             "options": {
-                "observations_office": "KBOS",
                 "forecast_office": "BOX/69,76"
             }
         }

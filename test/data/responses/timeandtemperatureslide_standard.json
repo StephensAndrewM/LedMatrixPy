@@ -1,0 +1,9 @@
+{
+    "station": "https://api.weather.gov/stations/KBOS",
+    "timestamp": "2022-05-23T16:33:00+00:00",
+    "icon": "https://api.weather.gov/icons/land/day/rain_showers,30?size=medium",
+    "temperature": {
+        "unitCode": "wmoUnit:degC",
+        "value": 16.699999999999999
+    }
+}

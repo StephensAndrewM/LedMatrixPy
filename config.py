@@ -2,7 +2,7 @@ import json
 from os import path
 from typing import Dict, List, TypedDict
 
-_SlideConfig = TypedDict('_SlideConfig', {
+SlideConfig = TypedDict('SlideConfig', {
     "type": str,
     "options": Dict[str, str]
 })
@@ -10,7 +10,8 @@ _SlideConfig = TypedDict('_SlideConfig', {
 Config = TypedDict('Config', {
     "slide_advance": int,
     "transition_millis": int,
-    "slides": List[_SlideConfig]
+    "static_slide": SlideConfig,
+    "rotating_slides": List[SlideConfig],
 })
 
 
@@ -18,4 +19,11 @@ def load_config() -> Config:
     script_dir = path.dirname(path.realpath(__file__))
     config_file = path.join(script_dir, "config.json")
     with open(config_file) as f:
-        return json.load(f)  # type: ignore
+        config = json.load(f)  # type: ignore
+
+        # Verify a few required properties are present.
+        assert "static_slide" in config
+        assert "rotating_slides" in config
+        assert len(config["rotating_slides"]) > 0
+
+        return config

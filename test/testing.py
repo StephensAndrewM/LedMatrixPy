@@ -2,11 +2,11 @@ from datetime import datetime
 from typing import Dict, List
 
 import requests
-from PIL import Image, ImageChops, ImageDraw  # type: ignore
+from PIL import Image, ImageChops  # type: ignore
 
 from abstractslide import AbstractSlide
 from deps import Dependencies
-from drawing import default_image
+from drawing import create_slide
 from requester import Endpoint, Requester
 from timesource import TimeSource
 
@@ -75,8 +75,8 @@ class TestDependencies(Dependencies):
 
 
 def draw_and_compare(golden_image_name: str, slide: AbstractSlide) -> bool:
-    img = default_image()
-    slide.draw(ImageDraw.Draw(img))
+    img = create_slide(slide.get_type())
+    slide.draw(img)
     return compare_to_golden(golden_image_name, img)
 
 
@@ -86,11 +86,14 @@ def compare_to_golden(golden_image_name: str, actual_img: Image) -> bool:
         with Image.open(expected_img_filename) as expected_img:
             diff = ImageChops.difference(actual_img, expected_img)
 
-            if not diff.getbbox():
-                return True
-            else:
+            if actual_img.width != expected_img.width or actual_img.height != expected_img.height:
+                print("Output and golden images had different dimensions. Output: %dx%d, Golden: %dx%d" % (
+                    actual_img.width, actual_img.height, expected_img.width, expected_img.height))
+            elif diff.getbbox():
                 print("Output differed from %s" % expected_img_filename)
                 diff.save("test/data/golden/%s_diff.png" % golden_image_name)
+            else:
+                return True
 
     except FileNotFoundError:
         print("Golden image %s does not exist" % expected_img_filename)

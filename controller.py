@@ -1,27 +1,27 @@
 import logging
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from slideshow import Slideshow
+from show import Show
 
 
 class ControllerRequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         if self.path == "/start":
-            logging.info("Starting slideshow")
-            self.server.slideshow.start()  # type: ignore
+            logging.info("Starting show")
+            self.server.show.start()  # type: ignore
         elif self.path == "/stop":
-            logging.info("Stopping slideshow")
-            self.server.slideshow.stop()  # type: ignore
+            logging.info("Stopping show")
+            self.server.show.stop()  # type: ignore
         elif self.path == "/freeze":
-            logging.info("Freezing slideshow")
-            self.server.slideshow.freeze()  # type: ignore
+            logging.info("Freezing show")
+            self.server.show.freeze()  # type: ignore
         elif self.path == "/unfreeze":
-            logging.info("Unfreezing slideshow")
-            self.server.slideshow.unfreeze()  # type: ignore
+            logging.info("Unfreezing show")
+            self.server.show.unfreeze()  # type: ignore
         elif self.path == "/shutdown":
-            logging.info("Shutting down slideshow")
-            self.server.slideshow.stop()  # type: ignore
+            logging.info("Shutting down show")
+            self.server.show.stop()  # type: ignore
             self.server.stopped = True  # type: ignore
         else:
             logging.warning("Unknown controller endpoint %s", self.path)
@@ -32,14 +32,14 @@ class ControllerRequestHandler(BaseHTTPRequestHandler):
 
 
 class ControllerServer(HTTPServer):
-    slideshow: Slideshow
+    show: Show
     stopped: bool
 
-    def __init__(self, slideshow: Slideshow) -> None:
+    def __init__(self, show: Show) -> None:
         super(ControllerServer, self).__init__(
             ("localhost", 5000), ControllerRequestHandler
         )
-        self.slideshow = slideshow
+        self.show = show
         self.stopped = False
 
     def serve_forever(self, poll_interval: float = 0.5) -> None:
@@ -50,8 +50,8 @@ class ControllerServer(HTTPServer):
 class Controller:
     server: ControllerServer
 
-    def __init__(self, slideshow: Slideshow) -> None:
-        self.server = ControllerServer(slideshow)
+    def __init__(self, show: Show) -> None:
+        self.server = ControllerServer(show)
 
     def run_until_shutdown(self) -> None:
         try:

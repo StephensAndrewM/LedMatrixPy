@@ -37,6 +37,42 @@
             "temperature": 53,
             "temperatureUnit": "F",
             "icon": "https://api.weather.gov/icons/land/night/skc?size=medium"
+        },
+        {
+            "number": 5,
+            "name": "Saturday",
+            "startTime": "2022-07-02T06:00:00-04:00",
+            "endTime": "2022-07-02T18:00:00-04:00",
+            "temperature": 62,
+            "temperatureUnit": "F",
+            "icon": "https://api.weather.gov/icons/land/day/skc?size=medium"
+        },
+        {
+            "number": 6,
+            "name": "Saturday Night",
+            "startTime": "2022-07-02T18:00:00-04:00",
+            "endTime": "2022-07-03T06:00:00-04:00",
+            "temperature": 52,
+            "temperatureUnit": "F",
+            "icon": "https://api.weather.gov/icons/land/night/skc?size=medium"
+        },
+        {
+            "number": 7,
+            "name": "Sunday",
+            "startTime": "2022-07-03T06:00:00-04:00",
+            "endTime": "2022-07-03T18:00:00-04:00",
+            "temperature": 63,
+            "temperatureUnit": "F",
+            "icon": "https://api.weather.gov/icons/land/day/skc?size=medium"
+        },
+        {
+            "number": 8,
+            "name": "Sunday Night",
+            "startTime": "2022-07-03T18:00:00-04:00",
+            "endTime": "2022-07-04T06:00:00-04:00",
+            "temperature": 51,
+            "temperatureUnit": "F",
+            "icon": "https://api.weather.gov/icons/land/night/skc?size=medium"
         }
     ]
 }

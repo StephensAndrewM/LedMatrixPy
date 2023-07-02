@@ -1,9 +1,9 @@
 import datetime
 from typing import List, Tuple
 
-from PIL import ImageDraw  # type: ignore
+from PIL import Image, ImageDraw  # type: ignore
 
-from abstractslide import AbstractSlide
+from abstractslide import AbstractSlide, SlideType
 from deps import Dependencies
 from drawing import (AQUA, BLUE, GREEN, RED, YELLOW, Align, draw_string,
                      get_string_width)
@@ -83,35 +83,37 @@ class ChristmasSlide(AbstractSlide):
     def is_enabled(self) -> bool:
         return self.christmas_date > self.time_source.now()
 
-    def get_dimensions(self) -> Tuple[int, int]:
-        return (128, 32)
+    def get_type(self) -> SlideType:
+        # TODO: Make this slide support half-width format.
+        return SlideType.FULL_WIDTH
 
-    def draw(self, img: ImageDraw) -> None:
-        self._draw_tree(img, 18, 2)
-        self._draw_countdown(img, 82)
+    def draw(self, img: Image) -> None:
+        draw = ImageDraw.Draw(img)
+        self._draw_tree(draw, 18, 2)
+        self._draw_countdown(draw, 82)
 
-    def _draw_tree(self, img: ImageDraw, x: int, y: int) -> None:
+    def _draw_tree(self, draw: ImageDraw, x: int, y: int) -> None:
         # Star
         yellow = (255, 255, 0)
-        img.point((x+10, y-1), yellow)
+        draw.point((x+10, y-1), yellow)
 
         # Tree body
         dark_green = (0, 64, 0)
         for (j, row_def) in enumerate(_TREE_SHAPE):
-            img.line([(x+row_def[0], y+j), (x+row_def[0] +
-                     row_def[1]-1, y+j)], width=1, fill=dark_green)
+            draw.line([(x+row_def[0], y+j), (x+row_def[0] +
+                                             row_def[1]-1, y+j)], width=1, fill=dark_green)
 
         # Stump
         brown = (128, 64, 0)
-        img.rectangle([(x+9, y+25), (x+11, y+30)], fill=brown)
+        draw.rectangle([(x+9, y+25), (x+11, y+30)], fill=brown)
 
         # Lights
         colors = [AQUA, RED, GREEN, BLUE, YELLOW]
         for index, (i, j) in enumerate(_TREE_LIGHTS):
             c = colors[index % len(colors)]
-            img.point((x+i, y+j), c)
+            draw.point((x+i, y+j), c)
 
-    def _draw_countdown(self, img: ImageDraw, x: int) -> None:
+    def _draw_countdown(self, draw: ImageDraw, x: int) -> None:
         # Add one day to account for the fraction of today remaining.
         days = (self.christmas_date - self.time_source.now()).days + 1
         box_width = get_string_width(str(days)) + 8
@@ -119,9 +121,9 @@ class ChristmasSlide(AbstractSlide):
         if box_width < 19:
             box_width += 4
         box_x0 = x-int(box_width/2)
-        img.rectangle([(box_x0, 1), (box_x0+box_width-1, 13)], outline=GREEN)
+        draw.rectangle([(box_x0, 1), (box_x0+box_width-1, 13)], outline=GREEN)
 
-        draw_string(img, str(days), x, 4, Align.CENTER, GREEN)
+        draw_string(draw, str(days), x, 4, Align.CENTER, GREEN)
 
-        draw_string(img, "DAYS UNTIL", x, 16, Align.CENTER, RED)
-        draw_string(img, "CHRISTMAS", x, 24, Align.CENTER, RED)
+        draw_string(draw, "DAYS UNTIL", x, 16, Align.CENTER, RED)
+        draw_string(draw, "CHRISTMAS", x, 24, Align.CENTER, RED)

@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 
 from PIL import Image, ImageDraw  # type: ignore
 
+from abstractslide import SlideType
 from constants import GRID_HEIGHT, GRID_WIDTH
 from glyphs import GLYPH_SET, Glyph
 
@@ -29,8 +30,11 @@ ORANGE = (255, 220, 0)
 GRAY = (128, 128, 128)
 
 
-def default_image() -> Image:
-    return Image.new("RGB", (GRID_WIDTH, GRID_HEIGHT))
+def create_slide(type: SlideType) -> Image:
+    if type == SlideType.FULL_WIDTH:
+        return Image.new("RGB", [GRID_WIDTH, GRID_HEIGHT])
+    else:
+        return Image.new("RGB", [int(GRID_WIDTH/2), GRID_HEIGHT])
 
 
 def draw_string(img: ImageDraw, text: str, x: int, y: int, align: Align, c: Color, max_width: Optional[int] = None) -> None:
