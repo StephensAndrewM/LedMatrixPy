@@ -30,6 +30,9 @@ class Slideshow:
         self.advance_interval = advance_interval
         self.transition_interval = transition_interval
         self.slides = slides
+
+        self.slide_state_lock = Lock()
+        self.advance_timer = None
         self.is_running = False
         self.in_transition = False
 
@@ -38,19 +41,15 @@ class Slideshow:
             return
 
         self.is_running = True
-        self.current_slide_id = -1
-        self.advance()
+        self.current_slide_id = 0
+        self.current_slide = self.slides[0]
+        self._set_advance_timer()
 
     def advance(self) -> None:
-        self.slide_state_lock.acquire()
-        # Schedule the next advance event, if applicable.
-        if self.advance_interval is not None:
-            self.advance_timer = Timer(
-                self.advance_interval.seconds, self.advance)
-            self.advance_timer.start()
-        self.slide_state_lock.release()
+        self._set_advance_timer()
 
         next_slide_id = self.current_slide_id+1
+        next_slide_id %= len(self.slides)
         while next_slide_id != self.current_slide_id:
             if self.slides[next_slide_id].is_enabled():
                 break
@@ -74,6 +73,15 @@ class Slideshow:
 
         self.slide_state_lock.release()
 
+    def _set_advance_timer(self) -> None:
+        self.slide_state_lock.acquire()
+        # Schedule the next advance event, if applicable.
+        if self.advance_interval is not None:
+            self.advance_timer = Timer(
+                self.advance_interval.seconds, self.advance)
+            self.advance_timer.start()
+        self.slide_state_lock.release()
+
     def draw_frame(self, img: ImageDraw) -> None:
         self.slide_state_lock.acquire()
         if self.in_transition:
@@ -94,8 +102,8 @@ class Slideshow:
         if progress < 1:
             prev_img = create_slide(self.prev_slide.get_type())
             current_img = create_slide(self.current_slide.get_type())
-            self.prev_slide.draw(ImageDraw.Draw(prev_img))
-            self.current_slide.draw(ImageDraw.Draw(current_img))
+            self.prev_slide.draw(prev_img)
+            self.current_slide.draw(current_img)
             merged_img = t.merge(progress, prev_img, current_img)
             output_img.paste(merged_img)
         else:
@@ -119,16 +127,6 @@ class Slideshow:
     def unfreeze(self) -> None:
         if self.is_running and self.advance_timer is not None and not self.advance_timer.is_alive():
             self.advance()
-
-
-class WelcomeSlide(AbstractSlide):
-
-    def slide_type(self) -> SlideType:
-        return SlideType.FULL_WIDTH
-
-    def draw(self, img: ImageDraw) -> None:
-        draw_string(img, "HELLO!", 64, 2, Align.CENTER, AQUA)
-        draw_string(img, "ANDREW'S LED MATRIX", 64, 16, Align.CENTER, YELLOW)
 
 
 class SplitScreenSlide(AbstractSlide):
