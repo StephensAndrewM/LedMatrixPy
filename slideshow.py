@@ -118,13 +118,17 @@ class Slideshow:
 
         self.is_running = False
         if self.advance_timer is not None:
+            self.slide_state_lock.acquire()
             self.advance_timer.cancel()
             self.advance_timer.join()
+            self.slide_state_lock.release()
 
     def freeze(self) -> None:
         if self.is_running and self.advance_timer is not None and self.advance_timer.is_alive():
+            self.slide_state_lock.acquire()
             self.advance_timer.cancel()
             self.advance_timer.join()
+            self.slide_state_lock.release()
 
     def unfreeze(self) -> None:
         if self.is_running and self.advance_timer is not None and not self.advance_timer.is_alive():
