@@ -1,0 +1,10 @@
+[
+    {
+        "ParameterName": "O3",
+        "AQI": 29
+    },
+    {
+        "ParameterName": "PM2.5",
+        "AQI": 55
+    }
+]

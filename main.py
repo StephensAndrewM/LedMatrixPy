@@ -54,7 +54,7 @@ def generate_images() -> None:
     sleep(5)
     for slide in [static_slide, *rotating_slides]:
         img = create_slide(slide.get_type())
-        slide.draw(ImageDraw.Draw(img))
+        slide.draw(img)
         filename = type(slide).__name__
         write_grid_to_file(filename, img)
     deps.get_requester().stop()

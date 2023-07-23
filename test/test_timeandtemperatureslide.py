@@ -8,8 +8,11 @@ from timeandtemperatureslide import TimeAndTemperatureSlide
 
 _DEFAULT_CONFIG = {
     "observations_office": "TEST_O",
+    "airnow_zip_code": "12345",
+    "airnow_api_key": "API-KEY"
 }
 _DEFAULT_OBSERVATIONS_URL = "https://api.weather.gov/stations/TEST_O/observations/latest"
+_DEFAULT_AIRNOW_URL = "https://www.airnowapi.org/aq/observation/zipCode/current/?format=application/json&zipCode=12345&API_KEY=API-KEY"
 
 
 class TimeAndTemperatureSlideTest(unittest.TestCase):
@@ -26,10 +29,22 @@ class TimeAndTemperatureSlideTest(unittest.TestCase):
     def test_render(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
                                          "timeandtemperatureslide_standard.json")
+        self.deps.get_requester().expect(_DEFAULT_AIRNOW_URL,
+                                         "timeandtemperatureslide_airnow_low_aqi.json")
         self.deps.get_requester().start()
 
         self.assertTrue(draw_and_compare(
             "TimeAndTemperatureSlide_render", self.slide))
+        
+    def test_render_with_high_aqi(self) -> None:
+        self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
+                                         "timeandtemperatureslide_standard.json")
+        self.deps.get_requester().expect(_DEFAULT_AIRNOW_URL,
+                                         "timeandtemperatureslide_airnow_high_aqi.json")
+        self.deps.get_requester().start()
+
+        self.assertTrue(draw_and_compare(
+            "TimeAndTemperatureSlide_render_with_high_aqi", self.slide))
 
     def test_missing_observations(self) -> None:
         self.deps.get_requester().start()

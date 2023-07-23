@@ -46,7 +46,7 @@ class ForecastSlide(AbstractSlide):
         self.last_forecast_retrieval = datetime.datetime.min.replace(
             tzinfo=local_timezone)
         self.forecasts = list()
-        self.display_date_offset = options.get("date_offset", 0)
+        self.display_date_offset = int(options.get("date_offset", "0"))
 
         forecast_office = options.get("forecast_office", "BOX/69,76")
         deps.get_requester().add_endpoint(Endpoint(

@@ -1,13 +1,12 @@
-from abc import ABC, abstractmethod
 import logging
 import threading
-from dataclasses import dataclass
-from datetime import timedelta
 import time
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import timedelta
 from typing import Dict, List, Optional, Protocol
 
 import requests
-
 
 _LOG_REQUESTS = False
 
@@ -29,7 +28,7 @@ class Endpoint:
     refresh_interval: timedelta
     parse_callback: ParseCallback
     error_callback: ErrorCallback
-    headers: Dict[str, str]
+    headers: Dict[str, str] = field(default_factory=dict)
 
 
 class Requester(ABC):
