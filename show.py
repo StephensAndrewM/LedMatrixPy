@@ -73,9 +73,13 @@ class Show:
         self.outer_slideshow = Slideshow(
             outer_slides, advance_interval=None, transition_interval=transition_interval)
 
+        self.draw_enabled = False
         self.start()
 
     def start(self) -> None:
+        if self.draw_enabled:
+            return 
+            
         # Enables welcome slide.
         self.outer_slideshow.start()
         self.outer_slideshow.advance_to(0)
