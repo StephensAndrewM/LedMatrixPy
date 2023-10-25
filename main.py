@@ -15,6 +15,7 @@ from deps import Dependencies
 from display import Display, MatrixDisplay
 from drawing import create_slide
 from forecastslide import ForecastSlide
+from nycsubwayslide import NycSubwaySlide
 from imagewriter import write_grid_to_file
 from show import Show
 from timeandtemperatureslide import TimeAndTemperatureSlide
@@ -90,6 +91,8 @@ def create_slide_from_config(slide_config: SlideConfig, deps: Dependencies) -> A
         return ForecastSlide(deps, options)
     elif type == "ChristmasSlide":
         return ChristmasSlide(deps)
+    elif type == "NycSubwaySlide":
+        return NycSubwaySlide(deps, options)
     else:
         raise AssertionError("Unknown slide type %s", slide_config["type"])
 
