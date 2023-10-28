@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw  # type: ignore
 from abstractslide import AbstractSlide, SlideType
 from deps import Dependencies
 from drawing import GRAY, ORANGE, WHITE, YELLOW, Align, Color, draw_string
+from glyphs import GlyphSet
 from gtfs_realtime_pb2 import FeedMessage  # type: ignore
 from requester import Endpoint
 from timesource import TimeSource
@@ -95,7 +96,7 @@ class NycSubwaySlide(AbstractSlide):
         draw = ImageDraw.Draw(img)
         now = self.time_source.now()
 
-        draw_string(draw, "NORTHBOUND", 32, 0, Align.CENTER, WHITE)
+        draw_string(draw, "NORTHBOUND", 32, 0, Align.CENTER, GlyphSet.FONT_7PX, WHITE)
 
         next_line_y = 8
         drew_line = self._draw_prediction_line(
@@ -110,15 +111,14 @@ class NycSubwaySlide(AbstractSlide):
 
     def _draw_prediction_line(self, draw: ImageDraw, now: datetime.datetime, y: int, line_key: str, line_label: str, color: Color) -> bool:
         if (now - self.last_updated[line_key]) <= _STALENESS_THRESHOLD and len(self.departures[line_key]) > 0:
-            draw_string(draw, line_label + " ", 0, y, Align.LEFT, color)
+            draw_string(draw, line_label + " ", 0, y, Align.LEFT, GlyphSet.FONT_7PX, color)
             departure_strings: List[str] = []
             for departure in self.departures[line_key]:
                 diff = (departure - now).total_seconds()
                 if diff > 0 and len(departure_strings) < 3:
                     departure_strings.append("%d" % (diff // 60))
-            print(departure_strings)
             draw_string(draw, (",".join(departure_strings)) +
-                        " MIN", 10, y, Align.LEFT, WHITE)
+                        " MIN", 10, y, Align.LEFT, GlyphSet.FONT_7PX, WHITE)
             return True
         else:
             return False

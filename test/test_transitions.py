@@ -5,6 +5,7 @@ from PIL import ImageDraw  # type: ignore
 
 from abstractslide import SlideType
 from drawing import GREEN, RED, Align, create_slide, draw_string
+from glyphs import GlyphSet
 from transitions import FadeToBlack
 
 
@@ -27,9 +28,11 @@ class TimeSlideTest(unittest.TestCase):
 
     def _test_fade_to_black_at(self, progress: float, name: str) -> None:
         img0 = create_slide(SlideType.HALF_WIDTH)
-        draw_string(ImageDraw.Draw(img0), "A" * 22, 0, 0, Align.LEFT, RED)
+        draw_string(ImageDraw.Draw(img0), "A" * 22, 0, 0,
+                    Align.LEFT, GlyphSet.FONT_7PX, RED)
         img1 = create_slide(SlideType.HALF_WIDTH)
-        draw_string(ImageDraw.Draw(img1), "B" * 22, 0, 24, Align.LEFT, GREEN)
+        draw_string(ImageDraw.Draw(img1), "B" * 22, 0, 24,
+                    Align.LEFT, GlyphSet.FONT_7PX, GREEN)
 
         t = FadeToBlack()
         merged_grid = t.merge(progress, img0, img1)

@@ -8,6 +8,7 @@ from deps import Dependencies
 from drawing import (AQUA, BLUE, GREEN, RED, YELLOW, Align, draw_string,
                      get_string_width)
 from timesource import TimeSource
+from glyphs import GlyphSet
 
 # Define the tree body as a set of tuples setting row X offset and width.
 _TREE_SHAPE = [
@@ -116,14 +117,14 @@ class ChristmasSlide(AbstractSlide):
     def _draw_countdown(self, draw: ImageDraw, x: int) -> None:
         # Add one day to account for the fraction of today remaining.
         days = (self.christmas_date - self.time_source.now()).days + 1
-        box_width = get_string_width(str(days)) + 8
+        box_width = get_string_width(str(days), GlyphSet.FONT_7PX) + 8
         # Pad the box for shorter numbers
         if box_width < 19:
             box_width += 4
         box_x0 = x-int(box_width/2)
         draw.rectangle([(box_x0, 1), (box_x0+box_width-1, 13)], outline=GREEN)
 
-        draw_string(draw, str(days), x, 4, Align.CENTER, GREEN)
+        draw_string(draw, str(days), x, 4, Align.CENTER, GlyphSet.FONT_7PX, GREEN)
 
-        draw_string(draw, "DAYS UNTIL", x, 16, Align.CENTER, RED)
-        draw_string(draw, "CHRISTMAS", x, 24, Align.CENTER, RED)
+        draw_string(draw, "DAYS UNTIL", x, 16, Align.CENTER, GlyphSet.FONT_7PX, RED)
+        draw_string(draw, "CHRISTMAS", x, 24, Align.CENTER, GlyphSet.FONT_7PX, RED)

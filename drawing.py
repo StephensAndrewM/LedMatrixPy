@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw  # type: ignore
 
 from abstractslide import SlideType
 from constants import GRID_HEIGHT, GRID_WIDTH
-from glyphs import GLYPH_SET, Glyph
+from glyphs import ALL_GLYPHS, Glyph, GlyphSet
 
 
 class Align(enum.Enum):
@@ -37,15 +37,15 @@ def create_slide(type: SlideType) -> Image:
         return Image.new("RGB", [int(GRID_WIDTH/2), GRID_HEIGHT])
 
 
-def draw_string(img: ImageDraw, text: str, x: int, y: int, align: Align, c: Color, max_width: Optional[int] = None) -> None:
+def draw_string(img: ImageDraw, text: str, x: int, y: int, align: Align, set: GlyphSet, c: Color, max_width: Optional[int] = None) -> None:
     # Collect the glpyhs that make up the input text string.
     # Stop retrieving them if we exceed the max draw size.
     text_as_glyphs: List[Glyph] = []
     text_glyph_width = 0
     for i in range(0, len(text)):
-        if text[i] not in GLYPH_SET:
-            logging.debug("Glyph %s not in global glyph set", text[i])
-        glyph = GLYPH_SET[text[i]]
+        if (set, text[i]) not in ALL_GLYPHS:
+            logging.debug("Glyph %s not in glyph set %s", text[i], set)
+        glyph = ALL_GLYPHS[set, text[i]]
         text_glyph_width += glyph.width() + 1
         if max_width is not None and text_glyph_width > max_width:
             break
@@ -69,19 +69,19 @@ def draw_string(img: ImageDraw, text: str, x: int, y: int, align: Align, c: Colo
         offsetX += glyph.width() + 1
 
 
-def get_string_width(text: str) -> int:
+def get_string_width(text: str, set: GlyphSet) -> int:
     width = 0
     for i in range(0, len(text)):
-        glyph = GLYPH_SET[text[i]]
+        glyph = ALL_GLYPHS[set, text[i]]
         width += glyph.width() + 1
     return width-1
 
 
-def draw_glyph_by_name(img: ImageDraw, glyph_name: str, x: int, y: int, c: Color) -> None:
-    if glyph_name not in GLYPH_SET:
-        logging.debug("Glyph %s not in global glyph set", glyph_name)
+def draw_glyph_by_name(img: ImageDraw, glyph_name: str, x: int, y: int, set: GlyphSet, c: Color) -> None:
+    if (set, glyph_name) not in ALL_GLYPHS:
+        logging.debug("Glyph %s not in glyph set %s", glyph_name, set)
         return
-    return draw_glyph(img, GLYPH_SET[glyph_name], x, y, c)
+    return draw_glyph(img, ALL_GLYPHS[set, glyph_name], x, y, c)
 
 
 def draw_glyph(img: ImageDraw, glyph: Glyph, x: int, y: int, c: Color) -> None:
@@ -93,6 +93,6 @@ def draw_glyph(img: ImageDraw, glyph: Glyph, x: int, y: int, c: Color) -> None:
 
 def draw_error(img: ImageDraw, title: str, message: str) -> None:
     draw_string(img, title, int(GRID_WIDTH/2), 8,
-                Align.CENTER, WHITE, GRID_WIDTH)
+                Align.CENTER, GlyphSet.FONT_7PX, WHITE, GRID_WIDTH)
     draw_string(img, message, int(GRID_WIDTH/2), 16,
-                Align.CENTER, RED, GRID_WIDTH)
+                Align.CENTER, GlyphSet.FONT_7PX, RED, GRID_WIDTH)

@@ -10,6 +10,7 @@ from config import Config
 from constants import GRID_WIDTH
 from display import Display
 from drawing import AQUA, YELLOW, Align, create_slide, draw_string
+from glyphs import GlyphSet
 from requester import Requester
 from slideshow import Slideshow
 
@@ -20,8 +21,10 @@ class WelcomeSlide(AbstractSlide):
 
     def draw(self, img: Image) -> None:
         draw = ImageDraw.Draw(img)
-        draw_string(draw, "HELLO!", 64, 2, Align.CENTER, AQUA)
-        draw_string(draw, "ANDREW'S LED MATRIX", 64, 16, Align.CENTER, YELLOW)
+        draw_string(draw, "HELLO!", 64, 2, Align.CENTER,
+                    GlyphSet.FONT_7PX, AQUA)
+        draw_string(draw, "ANDREW'S LED MATRIX", 64, 16,
+                    Align.CENTER, GlyphSet.FONT_7PX, YELLOW)
 
 
 class SplitScreenSlide(AbstractSlide):
@@ -78,8 +81,8 @@ class Show:
 
     def start(self) -> None:
         if self.draw_enabled:
-            return 
-            
+            return
+
         # Enables welcome slide.
         self.outer_slideshow.start()
         self.outer_slideshow.advance_to(0)

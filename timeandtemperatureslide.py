@@ -10,6 +10,7 @@ from abstractslide import AbstractSlide, SlideType
 from deps import Dependencies
 from drawing import (GRAY, RED, WHITE, YELLOW, Align, draw_glyph_by_name,
                      draw_string)
+from glyphs import GlyphSet
 from requester import Endpoint
 from timesource import TimeSource
 from weatherutils import (NWS_HEADERS, celsius_to_fahrenheit,
@@ -122,19 +123,22 @@ class TimeAndTemperatureSlide(AbstractSlide):
         time_y_offset = 0
         if (self.current_temp is not None and observations_time_delta <= _OBSERVATIONS_STALENESS_THRESHOLD):
             if self.current_icon:
-                draw_glyph_by_name(draw, self.current_icon, 0, 16, WHITE)
+                draw_glyph_by_name(draw, self.current_icon,
+                                   0, 16, GlyphSet.WEATHER, WHITE)
             else:
-                draw_string(draw, "?", 6, 21, Align.LEFT, GRAY)
+                draw_string(draw, "?", 6, 21, Align.LEFT,
+                            GlyphSet.FONT_7PX, GRAY)
             draw_string(draw, "%d°" % self.current_temp,
-                        18, 21, Align.LEFT, WHITE)
+                        18, 21, Align.LEFT, GlyphSet.FONT_7PX, WHITE)
 
             # Only draw AQI if we also have weather conditions.
             air_quality_time_delta = self.time_source.now() - self.last_air_quality_retrieval
             if (self.current_aqi is not None and air_quality_time_delta <= _OBSERVATIONS_STALENESS_THRESHOLD):
                 if self.current_aqi > 100:
-                    draw_string(draw, "AQI", 50, 16, Align.CENTER, RED)
+                    draw_string(draw, "AQI", 50, 16, Align.CENTER,
+                                GlyphSet.FONT_7PX, RED)
                     draw_string(draw, str(self.current_aqi),
-                                50, 24, Align.CENTER, RED)
+                                50, 24, Align.CENTER, GlyphSet.FONT_7PX,    RED)
 
             # Show a subtle indicator that this data is mildly stale.
             if (observations_time_delta > _OBSERVATIONS_REFRESH_INTERVAL*2):
@@ -144,6 +148,8 @@ class TimeAndTemperatureSlide(AbstractSlide):
             time_y_offset = 8
 
         date_string = now.strftime("%a %b %-d").upper()
-        draw_string(draw, date_string, 0, time_y_offset+0, Align.LEFT, YELLOW)
+        draw_string(draw, date_string, 0, time_y_offset+0,
+                    Align.LEFT, GlyphSet.FONT_7PX, YELLOW)
         time_string = now.strftime("%-I:%M %p")
-        draw_string(draw, time_string, 0, time_y_offset+8, Align.LEFT, YELLOW)
+        draw_string(draw, time_string, 0, time_y_offset+8,
+                    Align.LEFT, GlyphSet.FONT_7PX, YELLOW)

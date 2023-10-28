@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 from PIL import Image, ImageDraw  # type: ignore
 
+from glyphs import GlyphSet
 from abstractslide import AbstractSlide, SlideType
 from deps import Dependencies
 from drawing import AQUA, GRAY, WHITE, Align, draw_glyph_by_name, draw_string
@@ -171,16 +172,16 @@ class ForecastSlide(AbstractSlide):
 
     def _draw_forecast(self, draw: ImageDraw, x: int, y: int, forecast: DailyForecast) -> None:
         forecast_date = forecast.date.strftime("%a").upper()
-        draw_string(draw, forecast_date, x+17, y, Align.LEFT, AQUA)
+        draw_string(draw, forecast_date, x+17, y, Align.LEFT, GlyphSet.FONT_7PX, AQUA)
 
         if forecast.high_temp is not None:
             forecast_temp = "%d°/%d°" % (forecast.high_temp,
                                          forecast.low_temp)
         else:
             forecast_temp = "%d°" % (forecast.low_temp)
-        draw_string(draw, forecast_temp, x+17, y+8, Align.LEFT, WHITE)
+        draw_string(draw, forecast_temp, x+17, y+8, Align.LEFT, GlyphSet.FONT_7PX, WHITE)
 
         if forecast.icon:
-            draw_glyph_by_name(draw, forecast.icon, x, y, WHITE)
+            draw_glyph_by_name(draw, forecast.icon, x, y, GlyphSet.WEATHER, WHITE)
         else:
-            draw_string(draw, "?", x+6, y+4, Align.LEFT, GRAY)
+            draw_string(draw, "?", x+6, y+4, Align.LEFT, GlyphSet.FONT_7PX, GRAY)
