@@ -3,7 +3,7 @@ import re
 from collections import defaultdict
 from os import listdir, path
 from typing import Dict, List, Tuple
-
+import logging
 _SPACE_WIDTH = 3
 
 
@@ -68,6 +68,9 @@ ALL_GLYPHS[GlyphSet.FONT_7PX, " "] = SPACE_GLYPH
 def _store_glyph(set: GlyphSet, name: str, data:List[str]) -> None:
     # In case of two blank lines in a row, don't store anything.
     if name and len(data) > 0:
+        # Don't accidentally read a data line as a glyph name.
+        if re.match("[\.X]{2,}", name):
+            logging.warning("Suspicious glyph name: %s" % name)
         glyph = Glyph(name, data)
         ALL_GLYPHS[set, name] = glyph
 
