@@ -4,7 +4,7 @@ from collections import defaultdict
 from os import listdir, path
 from typing import Dict, List, Tuple
 
-_SPACE_WIDTH = 4
+_SPACE_WIDTH = 3
 
 
 class GlyphSet(enum.Enum):
