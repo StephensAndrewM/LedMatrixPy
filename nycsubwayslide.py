@@ -8,7 +8,8 @@ from PIL import Image, ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide, SlideType
 from deps import Dependencies
-from drawing import GRAY, ORANGE, WHITE, YELLOW, Align, Color, draw_string
+from drawing import (BLACK, GRAY, ORANGE, WHITE, YELLOW, Align, Color,
+                     draw_string)
 from glyphs import GlyphSet
 from gtfs_realtime_pb2 import FeedMessage  # type: ignore
 from requester import Endpoint
@@ -16,6 +17,8 @@ from timesource import TimeSource
 
 _REFRESH_INTERVAL = datetime.timedelta(minutes=1)
 _STALENESS_THRESHOLD = datetime.timedelta(minutes=10)
+_DEPARTURE_LOWER_BOUND = datetime.timedelta(minutes=5)
+_MAX_NUM_PREDICTIONS = 2
 
 
 class NycSubwaySlide(AbstractSlide):
@@ -81,7 +84,8 @@ class NycSubwaySlide(AbstractSlide):
                         t = datetime.datetime.fromtimestamp(
                             update.departure.time, tz.gettz("America/New_York"))
                         departures.append(t)
-        self.departures[expected_line] = departures
+        # Departures aren't always given in order, so sort them before storing.
+        self.departures[expected_line] = sorted(departures)
         self.last_updated[expected_line] = self.time_source.now()
         return True
 
@@ -96,29 +100,36 @@ class NycSubwaySlide(AbstractSlide):
         draw = ImageDraw.Draw(img)
         now = self.time_source.now()
 
-        draw_string(draw, "NORTHBOUND", 32, 0, Align.CENTER, GlyphSet.FONT_7PX, WHITE)
+        next_line_y = 0
+        if self._has_predictions("Q"):
+            self._draw_prediction_line(
+                draw, now, next_line_y, "Q", "Q", YELLOW)
+            next_line_y += 12
 
-        next_line_y = 8
-        drew_line = self._draw_prediction_line(
-            draw, now, next_line_y, "Q", "Q", YELLOW)
-        if drew_line:
-            next_line_y += 8
-        drew_line = self._draw_prediction_line(
-            draw, now, next_line_y, "B", "B", ORANGE)
-        if drew_line:
-            next_line_y += 8
-        self._draw_prediction_line(draw, now, next_line_y, "FS", "S", GRAY)
+        if self._has_predictions("B"):
+            self._draw_prediction_line(
+                draw, now, next_line_y, "B", "B", ORANGE)
+            next_line_y += 12
 
-    def _draw_prediction_line(self, draw: ImageDraw, now: datetime.datetime, y: int, line_key: str, line_label: str, color: Color) -> bool:
-        if (now - self.last_updated[line_key]) <= _STALENESS_THRESHOLD and len(self.departures[line_key]) > 0:
-            draw_string(draw, line_label + " ", 0, y, Align.LEFT, GlyphSet.FONT_7PX, color)
-            departure_strings: List[str] = []
-            for departure in self.departures[line_key]:
-                diff = (departure - now).total_seconds()
-                if diff > 0 and len(departure_strings) < 3:
-                    departure_strings.append("%d" % (diff // 60))
-            draw_string(draw, (",".join(departure_strings)) +
-                        " MIN", 10, y, Align.LEFT, GlyphSet.FONT_7PX, WHITE)
-            return True
-        else:
-            return False
+        if self._has_predictions("FS"):
+            self._draw_prediction_line(draw, now, next_line_y, "FS", "S", GRAY)
+
+    def _draw_prediction_line(self, draw: ImageDraw, now: datetime.datetime, y: int, line_key: str, line_label: str, color: Color) -> None:
+        draw.ellipse([(0, y), (10, y+10)], fill=color)
+        draw_string(draw, line_label + " ", 3, y+2,
+                    Align.LEFT, GlyphSet.FONT_7PX, BLACK)
+        departure_strings: List[str] = []
+        for departure in self.departures[line_key]:
+            diff = (departure - now)
+            if diff >= _DEPARTURE_LOWER_BOUND and len(departure_strings) < _MAX_NUM_PREDICTIONS:
+                departure_strings.append("%d" % (diff.total_seconds() // 60))
+        draw_string(draw, (", ".join(departure_strings)) +
+                    " min", 14, y+2, Align.LEFT, GlyphSet.FONT_7PX, WHITE)
+
+    def _has_predictions(self, line_key: str) -> bool:
+        now = self.time_source.now()
+        if now - self.last_updated[line_key] <= _STALENESS_THRESHOLD:
+            if len(self.departures[line_key]) > 0:
+                if any((d - now) >= _DEPARTURE_LOWER_BOUND for d in self.departures[line_key]):
+                    return True
+        return False
