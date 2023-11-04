@@ -23,11 +23,13 @@ _MAX_NUM_PREDICTIONS = 2
 
 class NycSubwaySlide(AbstractSlide):
     time_source: TimeSource
-    departures: Dict[str, List[datetime.datetime]] = {}
-    last_updated: Dict[str, datetime.datetime] = {}
+    departures: Dict[str, List[datetime.datetime]]
+    last_updated: Dict[str, datetime.datetime]
 
     def __init__(self, deps: Dependencies, options: Dict[str, str]) -> None:
         self.time_source = deps.get_time_source()
+        self.departures = {}
+        self.last_updated = {}
         headers = {"x-api-key": options.get("mta_api_key", "")}
 
         deps.get_requester().add_endpoint(Endpoint(
@@ -104,12 +106,12 @@ class NycSubwaySlide(AbstractSlide):
         if self._has_predictions("Q"):
             self._draw_prediction_line(
                 draw, now, next_line_y, "Q", "Q", YELLOW)
-            next_line_y += 12
+            next_line_y += 11
 
         if self._has_predictions("B"):
             self._draw_prediction_line(
                 draw, now, next_line_y, "B", "B", ORANGE)
-            next_line_y += 12
+            next_line_y += 11
 
         if self._has_predictions("FS"):
             self._draw_prediction_line(draw, now, next_line_y, "FS", "S", GRAY)
@@ -128,8 +130,9 @@ class NycSubwaySlide(AbstractSlide):
 
     def _has_predictions(self, line_key: str) -> bool:
         now = self.time_source.now()
-        if now - self.last_updated[line_key] <= _STALENESS_THRESHOLD:
-            if len(self.departures[line_key]) > 0:
-                if any((d - now) >= _DEPARTURE_LOWER_BOUND for d in self.departures[line_key]):
-                    return True
+        if line_key in self.last_updated:
+            if now - self.last_updated[line_key] <= _STALENESS_THRESHOLD:
+                if len(self.departures[line_key]) > 0:
+                    if any((d - now) >= _DEPARTURE_LOWER_BOUND for d in self.departures[line_key]):
+                        return True
         return False

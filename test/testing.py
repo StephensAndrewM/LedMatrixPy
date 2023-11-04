@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Dict, List
 
 import requests
+from google.protobuf import message, text_format
 from PIL import Image, ImageChops  # type: ignore
 
 from abstractslide import AbstractSlide
@@ -49,12 +50,21 @@ class FakeRequester(Requester):
     def stop(self) -> None:
         pass
 
+    def expect_with_proto_response(self, url: str, file: str, message: message) -> None:
+        with open("test/data/responses/" + file) as f:
+            content = text_format.Parse(f.read(), message).SerializeToString()
+            self.set_expectation(url, content)
+
     def expect(self, url: str, file: str) -> None:
         with open("test/data/responses/" + file) as f:
-            response = requests.models.Response()
-            response.status_code = 200
-            response._content = str.encode(f.read())  # type: ignore
-            self.expected_responses[url] = response
+            content = str.encode(f.read())  # type: ignore
+            self.set_expectation(url, content)
+
+    def set_expectation(self, url: str, content: bytes) -> None:
+        response = requests.models.Response()
+        response.status_code = 200
+        response._content = content
+        self.expected_responses[url] = response
 
     def clear_expectation(self, url: str) -> None:
         self.expected_responses.pop(url, None)

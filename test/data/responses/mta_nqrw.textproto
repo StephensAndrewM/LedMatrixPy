@@ -1,0 +1,73 @@
+header {
+    gtfs_realtime_version: "1.0"
+    timestamp: 1698667541
+}
+entity {
+    id: "000001N"
+    trip_update {
+        trip {
+            route_id: "Q"
+        }
+        stop_time_update {
+            stop_id: "D26N"
+            departure {
+                # 2023-10-30 6:00:00 PM
+                time: 1698703200
+            }
+        }
+        stop_time_update {
+            # Irrelevant stop, should be ignored
+            stop_id: "D28N"
+            departure {
+                # 2023-10-30 5:59:00 PM
+                time: 1698703140
+            }
+        }
+    }
+}
+entity {
+    id: "000002N"
+    trip_update {
+        trip {
+            route_id: "N"
+        }
+        stop_time_update {
+            stop_id: "D26N"
+            departure {
+                # 2023-10-30 6:01:00 PM
+                time: 1698703260
+            }
+        }
+    }
+}
+entity {
+    id: "000003N"
+    trip_update {
+        trip {
+            route_id: "Q"
+        }
+        stop_time_update {
+            stop_id: "D26N"
+            departure {
+                # 2023-10-30 6:20:00 PM
+                time: 1698704400
+            }
+        }
+    }
+}
+entity {
+    id: "000004N"
+    trip_update {
+        trip {
+            route_id: "Q"
+        }
+        stop_time_update {
+            stop_id: "D26N"
+            departure {
+                # 2023-10-30 6:10:00 PM
+                # Deliberately out of order
+                time: 1698703800
+            }
+        }
+    }
+}

@@ -1,0 +1,19 @@
+header {
+    gtfs_realtime_version: "1.0"
+    timestamp: 1698667541
+}
+entity {
+    id: "000001N"
+    trip_update {
+        trip {
+            route_id: "FS"
+        }
+        stop_time_update {
+            stop_id: "D26N"
+            departure {
+                # 2023-10-30 6:00:00 PM
+                time: 1698703200
+            }
+        }
+    }
+}
