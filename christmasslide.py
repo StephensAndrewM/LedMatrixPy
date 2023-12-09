@@ -89,8 +89,8 @@ class ChristmasSlide(AbstractSlide):
 
     def draw(self, img: Image) -> None:
         draw = ImageDraw.Draw(img)
-        self._draw_tree(draw, 0, 2)
-        self._draw_countdown(draw, 43)
+        self._draw_tree(draw, 8, 2)
+        self._draw_countdown(draw, 44)
 
     def _draw_tree(self, draw: ImageDraw, x: int, y: int) -> None:
         # Star
@@ -98,7 +98,7 @@ class ChristmasSlide(AbstractSlide):
         draw.point((x+10, y-1), yellow)
 
         # Tree body
-        dark_green = (0, 64, 0)
+        dark_green = (0, 128, 0)
         for (j, row_def) in enumerate(_TREE_SHAPE):
             draw.line([(x+row_def[0], y+j), (x+row_def[0] +
                                              row_def[1]-1, y+j)], width=1, fill=dark_green)
