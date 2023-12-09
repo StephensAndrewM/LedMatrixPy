@@ -102,16 +102,27 @@ class NycSubwaySlide(AbstractSlide):
         draw = ImageDraw.Draw(img)
         now = self.time_source.now()
 
-        next_line_y = 0
+        num_lines = sum([self._has_predictions(line) for line in ["Q", "B", "FS"]])
+        if num_lines == 1:
+            start_y = 11
+            line_height = 0
+        elif num_lines == 2:
+            start_y = 3
+            line_height = 14
+        else:
+            start_y = 0
+            line_height = 11
+
+        next_line_y = start_y
         if self._has_predictions("Q"):
             self._draw_prediction_line(
                 draw, now, next_line_y, "Q", "Q", YELLOW)
-            next_line_y += 11
+            next_line_y += line_height
 
         if self._has_predictions("B"):
             self._draw_prediction_line(
                 draw, now, next_line_y, "B", "B", ORANGE)
-            next_line_y += 11
+            next_line_y += line_height
 
         if self._has_predictions("FS"):
             self._draw_prediction_line(draw, now, next_line_y, "FS", "S", GRAY)

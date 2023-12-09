@@ -31,6 +31,16 @@ class NycSubwaySlideTest(unittest.TestCase):
 
         self.assertTrue(draw_and_compare(
             "NycSubwaySlide_has_departures_one_line", self.slide))
+        
+    def test_render_has_departures_two_lines(self) -> None:
+        self.deps.get_requester().expect_with_proto_response(
+            _NQRW_URL, "mta_nqrw.textproto", FeedMessage())
+        self.deps.get_requester().expect_with_proto_response(
+            _ACE_URL, "mta_ace.textproto", FeedMessage())
+        self.deps.get_requester().start()
+
+        self.assertTrue(draw_and_compare(
+            "NycSubwaySlide_has_departures_two_lines", self.slide))
 
     def test_render_has_departures_all_lines(self) -> None:
         self.deps.get_requester().expect_with_proto_response(
