@@ -76,10 +76,10 @@ class RequesterThread:
 
         self._log_to_file(response)
 
-        if response.status_code != 200:
+        if response.status_code >= 300:
             self.failures_without_success += 1
             self.endpoint.error_callback(response)
-            logging.warning("Non-200 response %d from endpoint %s. Url: %s, response: %s",
+            logging.warning("Non-2xx response %d from endpoint %s. Url: %s, response: %s",
                             response.status_code, self.endpoint.name, self.endpoint.url, response.content)
             self.schedule_retry()
             return
