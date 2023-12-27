@@ -24,14 +24,23 @@ class NycSubwaySlideTest(unittest.TestCase):
         self.deps.time_source.set(test_datetime)
         self.slide = NycSubwaySlide(self.deps, _DEFAULT_CONFIG)
 
+    def test_render_has_no_departures(self) -> None:
+        self.deps.get_requester().start()
+
+        self.assertFalse(self.slide.is_enabled())
+        # Slide should be blank.
+        self.assertTrue(draw_and_compare(
+            "NycSubwaySlide_has_no_departures", self.slide))
+
     def test_render_has_departures_one_line(self) -> None:
         self.deps.get_requester().expect_with_proto_response(
             _NQRW_URL, "mta_nqrw.textproto", FeedMessage())
         self.deps.get_requester().start()
 
+        self.assertTrue(self.slide.is_enabled())
         self.assertTrue(draw_and_compare(
             "NycSubwaySlide_has_departures_one_line", self.slide))
-        
+
     def test_render_has_departures_two_lines(self) -> None:
         self.deps.get_requester().expect_with_proto_response(
             _NQRW_URL, "mta_nqrw.textproto", FeedMessage())
@@ -39,6 +48,7 @@ class NycSubwaySlideTest(unittest.TestCase):
             _ACE_URL, "mta_ace.textproto", FeedMessage())
         self.deps.get_requester().start()
 
+        self.assertTrue(self.slide.is_enabled())
         self.assertTrue(draw_and_compare(
             "NycSubwaySlide_has_departures_two_lines", self.slide))
 
@@ -51,5 +61,6 @@ class NycSubwaySlideTest(unittest.TestCase):
             _ACE_URL, "mta_ace.textproto", FeedMessage())
         self.deps.get_requester().start()
 
+        self.assertTrue(self.slide.is_enabled())
         self.assertTrue(draw_and_compare(
             "NycSubwaySlide_has_departures_all_lines", self.slide))

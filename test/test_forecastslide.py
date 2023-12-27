@@ -32,6 +32,7 @@ class ForecastSlideTest(unittest.TestCase):
 
         self.deps.get_requester().start()
 
+        self.assertTrue(self.slide.is_enabled())
         self.assertTrue(draw_and_compare("ForecastSlide_evening", self.slide))
 
     def test_render_afternoon(self) -> None:
@@ -40,12 +41,14 @@ class ForecastSlideTest(unittest.TestCase):
 
         self.deps.get_requester().start()
 
+        self.assertTrue(self.slide.is_enabled())
         self.assertTrue(draw_and_compare(
             "ForecastSlide_afternoon", self.slide))
 
     def test_render_missing_forecast(self) -> None:
         self.deps.get_requester().start()
 
+        self.assertFalse(self.slide.is_enabled())
         self.assertTrue(draw_and_compare(
             "ForecastSlide_missing_forecast", self.slide))
 
@@ -57,6 +60,7 @@ class ForecastSlideTest(unittest.TestCase):
         config_with_offset["date_offset"] = 2
         slide_with_offset = ForecastSlide(self.deps, config_with_offset)
         self.deps.get_requester().start()
+        self.assertTrue(self.slide.is_enabled())
         self.assertTrue(draw_and_compare(
             "ForecastSlide_with_offset", slide_with_offset))
 
@@ -72,6 +76,7 @@ class ForecastSlideTest(unittest.TestCase):
 
         # Slide should display the existing forecast, ignoring the error.
         # A dot should be displayed in the bottom right corner.
+        self.assertTrue(self.slide.is_enabled())
         self.assertTrue(draw_and_compare(
             "ForecastSlide_forecast_error_soon_after_success", self.slide))
 
@@ -86,29 +91,6 @@ class ForecastSlideTest(unittest.TestCase):
         self.deps.get_requester().start()
 
         # Slide should not display a forecast because data is too old.
+        self.assertFalse(self.slide.is_enabled())
         self.assertTrue(draw_and_compare(
             "ForecastSlide_forecast_error_long_after_success", self.slide))
-
-    def test_render_observations_error(self) -> None:
-        self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
-                                         "forecastslide_afternoon.json")
-
-        self.deps.get_requester().start()
-
-        self.assertTrue(draw_and_compare(
-            "ForecastSlide_missing_observations", self.slide))
-
-    def test_render_all_error(self) -> None:
-        self.deps.get_requester().start()
-
-        self.assertTrue(draw_and_compare(
-            "ForecastSlide_missing_everything", self.slide))
-
-    def test_render_null_current_temp(self) -> None:
-        self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
-                                         "forecastslide_afternoon.json")
-
-        self.deps.get_requester().start()
-
-        self.assertTrue(draw_and_compare(
-            "ForecastSlide_null_current_temp", self.slide))

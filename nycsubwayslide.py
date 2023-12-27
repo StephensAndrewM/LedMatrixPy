@@ -98,11 +98,15 @@ class NycSubwaySlide(AbstractSlide):
     def get_type(self) -> SlideType:
         return SlideType.HALF_WIDTH
 
+    def is_enabled(self) -> bool:
+        # Slide should not be shown if there is no data at all.
+        return self._get_num_lines() > 0
+
     def draw(self, img: Image) -> None:
         draw = ImageDraw.Draw(img)
         now = self.time_source.now()
 
-        num_lines = sum([self._has_predictions(line) for line in ["Q", "B", "FS"]])
+        num_lines = self._get_num_lines()
         if num_lines == 1:
             start_y = 11
             line_height = 0
@@ -126,6 +130,9 @@ class NycSubwaySlide(AbstractSlide):
 
         if self._has_predictions("FS"):
             self._draw_prediction_line(draw, now, next_line_y, "FS", "S", GRAY)
+
+    def _get_num_lines(self) -> int:
+        return sum([self._has_predictions(line) for line in ["Q", "B", "FS"]])
 
     def _draw_prediction_line(self, draw: ImageDraw, now: datetime.datetime, y: int, line_key: str, line_label: str, color: Color) -> None:
         draw.ellipse([(0, y), (10, y+10)], fill=color)

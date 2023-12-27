@@ -157,31 +157,40 @@ class ForecastSlide(AbstractSlide):
     def get_type(self) -> SlideType:
         return SlideType.HALF_WIDTH
 
-    def draw(self, img: Image) -> None:
-        draw = ImageDraw.Draw(img)
-        forecast_time_delta = self.time_source.now() - self.last_forecast_retrieval
-        if forecast_time_delta <= _FORECAST_STALENESS_THRESHOLD:
-            self._draw_forecast(
-                draw, 0, 0, self.forecasts[self.display_date_offset])
-            self._draw_forecast(
-                draw, 0, 16, self.forecasts[self.display_date_offset+1])
+    def is_enabled(self) -> bool:
+        return self._has_valid_data()
 
-            # Show a subtle indicator that this data is mildly stale.
-            if (forecast_time_delta > _FORECAST_REFRESH_INTERVAL*2):
-                draw.point((83, 31), GRAY)
+    def draw(self, img: Image) -> None:
+        if not self._has_valid_data():
+            return
+
+        draw = ImageDraw.Draw(img)
+        self._draw_forecast(
+            draw, 0, 0, self.forecasts[self.display_date_offset])
+        self._draw_forecast(
+            draw, 0, 16, self.forecasts[self.display_date_offset+1])
+
+    def _has_valid_data(self) -> bool:
+        # Slide should not be shown if we are missing predictions entirely.
+        forecast_time_delta = self.time_source.now() - self.last_forecast_retrieval
+        return forecast_time_delta <= _FORECAST_STALENESS_THRESHOLD
 
     def _draw_forecast(self, draw: ImageDraw, x: int, y: int, forecast: DailyForecast) -> None:
         forecast_date = forecast.date.strftime("%a").upper()
-        draw_string(draw, forecast_date, x+17, y, Align.LEFT, GlyphSet.FONT_7PX, AQUA)
+        draw_string(draw, forecast_date, x+17, y,
+                    Align.LEFT, GlyphSet.FONT_7PX, AQUA)
 
         if forecast.high_temp is not None:
             forecast_temp = "%d°/%d°" % (forecast.high_temp,
                                          forecast.low_temp)
         else:
             forecast_temp = "%d°" % (forecast.low_temp)
-        draw_string(draw, forecast_temp, x+17, y+8, Align.LEFT, GlyphSet.FONT_7PX, WHITE)
+        draw_string(draw, forecast_temp, x+17, y+8,
+                    Align.LEFT, GlyphSet.FONT_7PX, WHITE)
 
         if forecast.icon:
-            draw_glyph_by_name(draw, forecast.icon, x, y, GlyphSet.WEATHER, WHITE)
+            draw_glyph_by_name(draw, forecast.icon, x, y,
+                               GlyphSet.WEATHER, WHITE)
         else:
-            draw_string(draw, "?", x+6, y+4, Align.LEFT, GlyphSet.FONT_7PX, GRAY)
+            draw_string(draw, "?", x+6, y+4, Align.LEFT,
+                        GlyphSet.FONT_7PX, GRAY)
