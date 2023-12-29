@@ -69,8 +69,8 @@ class RequesterThread:
         except Exception as e:
             self.failures_without_success += 1
             self.endpoint.error_callback(None)
-            logging.warning("Exception from endpoint %s. Url: %s, exception: %s",
-                            self.endpoint.name, self.endpoint.url, e)
+            logging.warning("Exception from endpoint %s (failures: %d). Url: %s, exception: %s",
+                            self.endpoint.name, self.failures_without_success, self.endpoint.url, e)
             self.schedule_retry()
             return
 
@@ -79,8 +79,8 @@ class RequesterThread:
         if response.status_code >= 300:
             self.failures_without_success += 1
             self.endpoint.error_callback(response)
-            logging.warning("Non-2xx response %d from endpoint %s. Url: %s, response: %s",
-                            response.status_code, self.endpoint.name, self.endpoint.url, response.content)
+            logging.warning("Non-2xx response %d from endpoint %s (failures: %d). Url: %s, response: %s",
+                            response.status_code, self.endpoint.name, self.failures_without_success, self.endpoint.url, response.content)
             self.schedule_retry()
             return
 

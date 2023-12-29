@@ -76,7 +76,7 @@ class TimeAndTemperatureSlide(AbstractSlide):
         if not "temperature" in data or data["temperature"]["value"] is None:
             logging.debug("Observations contain null temperature")
             return False
-        
+
         # Get the time at which the observations were reported. This can be a long
         # time in the past even if the request itself is fresh.
         try:
