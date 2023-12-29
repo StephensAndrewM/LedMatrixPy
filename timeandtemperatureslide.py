@@ -17,7 +17,7 @@ from weatherutils import (NWS_HEADERS, celsius_to_fahrenheit,
                           icon_url_to_weather_glyph)
 
 _OBSERVATIONS_REFRESH_INTERVAL = datetime.timedelta(minutes=5)
-_OBSERVATIONS_STALENESS_THRESHOLD = datetime.timedelta(hours=2)
+_OBSERVATIONS_STALENESS_THRESHOLD = datetime.timedelta(hours=1)
 
 
 class TimeAndTemperatureSlide(AbstractSlide):
@@ -76,9 +76,17 @@ class TimeAndTemperatureSlide(AbstractSlide):
         if not "temperature" in data or data["temperature"]["value"] is None:
             logging.debug("Observations contain null temperature")
             return False
+        
+        # Get the time at which the observations were reported. This can be a long
+        # time in the past even if the request itself is fresh.
+        try:
+            reported_time = datetime.datetime.fromisoformat(data["timestamp"])
+        except ValueError:
+            logging.warning(
+                "Could not parse observations report time %s", data["timestamp"])
 
         # Assign all values at end in case an error returns otherwise.
-        self.last_observations_retrieval = self.time_source.now()
+        self.last_observations_retrieval = reported_time
         self.current_temp = int(
             celsius_to_fahrenheit(data["temperature"]["value"]))
         self.current_icon = icon_url_to_weather_glyph(data["icon"])

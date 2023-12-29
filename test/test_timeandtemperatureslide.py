@@ -67,3 +67,17 @@ class TimeAndTemperatureSlideTest(unittest.TestCase):
 
         self.assertTrue(draw_and_compare(
             "TimeAndTemperatureSlide_unknown_icon", self.slide))
+        
+    def test_observations_reported_long_ago(self) -> None:
+        # Date is more than 2 hours in the future beyond timestamp in file.
+        test_datetime = datetime.datetime(
+            2022, 5, 23, 14, 34, 0, 0, tz.gettz("America/New_York"))
+        self.deps.time_source.set(test_datetime)
+        self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
+                                         "timeandtemperatureslide_standard.json")
+        self.deps.get_requester().start()
+
+        self.assertTrue(draw_and_compare(
+            "TimeAndTemperatureSlide_observations_reported_long_ago", self.slide))
+        
+        
