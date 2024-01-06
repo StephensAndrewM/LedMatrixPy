@@ -17,7 +17,7 @@ from weatherutils import (NWS_HEADERS, celsius_to_fahrenheit,
                           icon_url_to_weather_glyph)
 
 _OBSERVATIONS_REFRESH_INTERVAL = datetime.timedelta(minutes=5)
-_OBSERVATIONS_STALENESS_THRESHOLD = datetime.timedelta(hours=1)
+_OBSERVATIONS_STALENESS_THRESHOLD = datetime.timedelta(hours=2)
 
 
 class TimeAndTemperatureSlide(AbstractSlide):
@@ -84,6 +84,13 @@ class TimeAndTemperatureSlide(AbstractSlide):
         except ValueError:
             logging.warning(
                 "Could not parse observations report time %s", data["timestamp"])
+            return False
+
+        observations_time_delta = self.time_source.now() - reported_time
+        if observations_time_delta > _OBSERVATIONS_STALENESS_THRESHOLD:
+            logging.warning(
+                "Received already stale observations (%s old)", observations_time_delta)
+            return False
 
         # Assign all values at end in case an error returns otherwise.
         self.last_observations_retrieval = reported_time
@@ -148,9 +155,6 @@ class TimeAndTemperatureSlide(AbstractSlide):
                     draw_string(draw, str(self.current_aqi),
                                 50, 24, Align.CENTER, GlyphSet.FONT_7PX,    RED)
 
-            # Show a subtle indicator that this data is mildly stale.
-            if (observations_time_delta > _OBSERVATIONS_REFRESH_INTERVAL*2):
-                draw.point((0, 31), GRAY)
         else:
             # Push down the date and time if there we don't have current conditions.
             time_y_offset = 8

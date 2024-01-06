@@ -32,10 +32,12 @@ _DEFAULT_ERROR_RESPONSE.status_code = 404
 class FakeRequester(Requester):
     configured_endpoints: List[Endpoint]
     expected_responses: Dict[str, requests.models.Response]
+    last_parse_successful: bool
 
     def __init__(self) -> None:
         self.configured_endpoints = []
         self.expected_responses = {}
+        self.last_parse_successful = False
 
     def add_endpoint(self, endpoint: Endpoint) -> None:
         self.configured_endpoints.append(endpoint)
@@ -43,7 +45,8 @@ class FakeRequester(Requester):
     def start(self) -> None:
         for endpoint in self.configured_endpoints:
             if endpoint.url in self.expected_responses:
-                endpoint.parse_callback(self.expected_responses[endpoint.url])
+                self.last_parse_successful = endpoint.parse_callback(
+                    self.expected_responses[endpoint.url])
             else:
                 endpoint.error_callback(_DEFAULT_ERROR_RESPONSE)
 

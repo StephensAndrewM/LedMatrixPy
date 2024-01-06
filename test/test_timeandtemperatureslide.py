@@ -32,10 +32,11 @@ class TimeAndTemperatureSlideTest(unittest.TestCase):
         self.deps.get_requester().expect(_DEFAULT_AIRNOW_URL,
                                          "timeandtemperatureslide_airnow_low_aqi.json")
         self.deps.get_requester().start()
-
+        
+        self.assertTrue(self.deps.get_requester().last_parse_successful)
         self.assertTrue(draw_and_compare(
             "TimeAndTemperatureSlide_render", self.slide))
-        
+
     def test_render_with_high_aqi(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
                                          "timeandtemperatureslide_standard.json")
@@ -67,17 +68,30 @@ class TimeAndTemperatureSlideTest(unittest.TestCase):
 
         self.assertTrue(draw_and_compare(
             "TimeAndTemperatureSlide_unknown_icon", self.slide))
-        
+
     def test_observations_reported_long_ago(self) -> None:
         # Date is more than 2 hours in the future beyond timestamp in file.
         test_datetime = datetime.datetime(
             2022, 5, 23, 14, 34, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(test_datetime)
+
         self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
                                          "timeandtemperatureslide_standard.json")
         self.deps.get_requester().start()
 
+        self.assertFalse(self.deps.get_requester().last_parse_successful)
         self.assertTrue(draw_and_compare(
             "TimeAndTemperatureSlide_observations_reported_long_ago", self.slide))
-        
-        
+
+    def test_observations_become_stale(self) -> None:
+        self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,
+                                         "timeandtemperatureslide_standard.json")
+        self.deps.get_requester().start()
+
+        # Date becomes more than 2 hours in the future beyond timestamp in file.
+        test_datetime = datetime.datetime(
+            2022, 5, 23, 14, 34, 0, 0, tz.gettz("America/New_York"))
+        self.deps.time_source.set(test_datetime)
+
+        self.assertTrue(draw_and_compare(
+            "TimeAndTemperatureSlide_observations_become_stale", self.slide))
