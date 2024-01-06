@@ -1,6 +1,5 @@
 import datetime
-import unittest
-from test.testing import TestDependencies, draw_and_compare
+from test.testing import SlideTest
 
 from dateutil import tz
 
@@ -12,17 +11,17 @@ _DEFAULT_CONFIG = {
 _DEFAULT_FORECAST_URL = "https://api.weather.gov/gridpoints/TEST_F/forecast"
 
 
-class ForecastSlideTest(unittest.TestCase):
+class ForecastSlideTest(SlideTest):
 
     def setUp(self) -> None:
-        self.deps = TestDependencies()
+        super().setUp()
         self.slide = ForecastSlide(self.deps, _DEFAULT_CONFIG)
 
         self.test_datetime = datetime.datetime(
             2022, 6, 30, 15, 31, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(self.test_datetime)
 
-    def test_render_evening(self) -> None:
+    def test_evening(self) -> None:
         self.test_datetime = datetime.datetime(
             2022, 5, 23, 19, 31, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(self.test_datetime)
@@ -33,26 +32,24 @@ class ForecastSlideTest(unittest.TestCase):
         self.deps.get_requester().start()
 
         self.assertTrue(self.slide.is_enabled())
-        self.assertTrue(draw_and_compare("ForecastSlide_evening", self.slide))
+        self.assertRenderMatchesGolden(self.slide)
 
-    def test_render_afternoon(self) -> None:
+    def test_afternoon(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
                                          "forecastslide_afternoon.json")
 
         self.deps.get_requester().start()
 
         self.assertTrue(self.slide.is_enabled())
-        self.assertTrue(draw_and_compare(
-            "ForecastSlide_afternoon", self.slide))
+        self.assertRenderMatchesGolden(self.slide)
 
-    def test_render_missing_forecast(self) -> None:
+    def test_missing_forecast(self) -> None:
         self.deps.get_requester().start()
 
         self.assertFalse(self.slide.is_enabled())
-        self.assertTrue(draw_and_compare(
-            "ForecastSlide_missing_forecast", self.slide))
+        self.assertRendersBlank(self.slide)
 
-    def test_render_date_offset(self) -> None:
+    def test_with_offset(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
                                          "forecastslide_afternoon.json")
 
@@ -61,10 +58,9 @@ class ForecastSlideTest(unittest.TestCase):
         slide_with_offset = ForecastSlide(self.deps, config_with_offset)
         self.deps.get_requester().start()
         self.assertTrue(self.slide.is_enabled())
-        self.assertTrue(draw_and_compare(
-            "ForecastSlide_with_offset", slide_with_offset))
+        self.assertRenderMatchesGolden(slide_with_offset)
 
-    def test_render_forecast_error_soon_after_success(self) -> None:
+    def test_forecast_error_soon_after_success(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
                                          "forecastslide_afternoon.json")
         self.deps.get_requester().start()
@@ -77,10 +73,9 @@ class ForecastSlideTest(unittest.TestCase):
         # Slide should display the existing forecast, ignoring the error.
         # A dot should be displayed in the bottom right corner.
         self.assertTrue(self.slide.is_enabled())
-        self.assertTrue(draw_and_compare(
-            "ForecastSlide_forecast_error_soon_after_success", self.slide))
+        self.assertRenderMatchesGolden(self.slide)
 
-    def test_render_forecast_error_long_after_success(self) -> None:
+    def test_forecast_error_long_after_success(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
                                          "forecastslide_afternoon.json")
         self.deps.get_requester().start()
@@ -92,5 +87,4 @@ class ForecastSlideTest(unittest.TestCase):
 
         # Slide should not display a forecast because data is too old.
         self.assertFalse(self.slide.is_enabled())
-        self.assertTrue(draw_and_compare(
-            "ForecastSlide_forecast_error_long_after_success", self.slide))
+        self.assertRendersBlank(self.slide)

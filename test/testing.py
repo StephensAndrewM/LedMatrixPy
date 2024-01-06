@@ -1,3 +1,5 @@
+import inspect
+import unittest
 from datetime import datetime
 from typing import Dict, List
 
@@ -85,6 +87,70 @@ class TestDependencies(Dependencies):
 
     def get_requester(self) -> FakeRequester:
         return self.requester
+
+
+_GOLDEN_DIR = "test/data/golden"
+
+
+class SlideTest(unittest.TestCase):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.deps = TestDependencies()
+
+    def assertRendersBlank(self, slide: AbstractSlide) -> None:
+        actual_img = create_slide(slide.get_type())
+        slide.draw(actual_img)
+        blank_img = create_slide(slide.get_type())
+        diff = ImageChops.difference(actual_img, blank_img)
+        if diff.getbbox():
+            image_name_base = self._image_name_from_test_name()
+            actual_img_filename = "%s/%s_actual.png" % (
+                _GOLDEN_DIR, image_name_base)
+            actual_img.save(actual_img_filename)
+            raise AssertionError(
+                "Expected no output, but something was rendered. Saved candidate to %s" % actual_img_filename)
+
+    def assertRenderMatchesGolden(self, slide: AbstractSlide) -> None:
+        actual_img = create_slide(slide.get_type())
+        slide.draw(actual_img)
+        image_name_base = self._image_name_from_test_name()
+        self._compare_to_golden(image_name_base, actual_img)
+
+    def assertImageMatchesGolden(self, actual_img: Image) -> None:
+        image_name_base = self._image_name_from_test_name()
+        self._compare_to_golden(image_name_base, actual_img)
+
+    def _image_name_from_test_name(self) -> str:
+        calling_function = inspect.stack()[2].function.replace("test_", "")
+        subclass = type(self).__name__.replace("Test", "")
+        return subclass + "_" + calling_function
+
+    def _compare_to_golden(self, image_name_base: str, actual_img: Image) -> bool:
+        expected_img_filename = "%s/%s_golden.png" % (
+            _GOLDEN_DIR, image_name_base)
+        actual_img_filename = "%s/%s_actual.png" % (
+            _GOLDEN_DIR, image_name_base)
+        try:
+            with Image.open(expected_img_filename) as expected_img:
+                diff = ImageChops.difference(actual_img, expected_img)
+
+                if actual_img.width != expected_img.width or actual_img.height != expected_img.height:
+                    raise AssertionError("Output and golden images had different dimensions. Output: %dx%d, Golden: %dx%d" % (
+                        actual_img.width, actual_img.height, expected_img.width, expected_img.height))
+
+                elif diff.getbbox():
+                    diff_img_filename = "%s/%s_diff.png" % (
+                        _GOLDEN_DIR, image_name_base)
+                    diff.save(diff_img_filename)
+                    actual_img.save(actual_img_filename)
+                    raise AssertionError("Output differed from %s. Saved candidate image to %s, diff to %s" % (
+                        expected_img_filename, actual_img_filename, diff_img_filename))
+
+        except FileNotFoundError:
+            actual_img.save(actual_img_filename)
+            raise AssertionError("Golden image %s does not exist. Saved %s as a candidate." % (
+                expected_img_filename, actual_img_filename))
 
 
 def draw_and_compare(golden_image_name: str, slide: AbstractSlide) -> bool:

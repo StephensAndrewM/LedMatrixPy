@@ -1,41 +1,37 @@
 import datetime
-import unittest
-from test.testing import TestDependencies, draw_and_compare
+from test.testing import SlideTest
 
 from dateutil import tz
 
 from christmasslide import ChristmasSlide
 
 
-class ChristmasSlideTest(unittest.TestCase):
+class ChristmasSlideTest(SlideTest):
 
-    def test_render_24_before_christmas(self) -> None:
-        deps = TestDependencies()
+    def test_24days(self) -> None:
         test_datetime = datetime.datetime(
             2022, 12, 1, 19, 31, tzinfo=tz.gettz("America/New_York"))
-        deps.time_source.set(test_datetime)
+        self.deps.time_source.set(test_datetime)
 
-        slide = ChristmasSlide(deps)
+        slide = ChristmasSlide(self.deps)
 
         self.assertTrue(slide.is_enabled())
-        self.assertTrue(draw_and_compare("ChristmasSlide_24days", slide))
+        self.assertRenderMatchesGolden(slide)
 
-    def test_render_3_before_christmas(self) -> None:
-        deps = TestDependencies()
+    def test_3days(self) -> None:
         test_datetime = datetime.datetime(
             2022, 12, 22, 19, 31, tzinfo=tz.gettz("America/New_York"))
-        deps.time_source.set(test_datetime)
+        self.deps.time_source.set(test_datetime)
 
-        slide = ChristmasSlide(deps)
+        slide = ChristmasSlide(self.deps)
 
         self.assertTrue(slide.is_enabled())
-        self.assertTrue(draw_and_compare("ChristmasSlide_3days", slide))
+        self.assertRenderMatchesGolden(slide)
 
-    def test_isenabled_after_christmas(self) -> None:
-        deps = TestDependencies()
+    def test_not_nabled_after_christmas(self) -> None:
         test_datetime = datetime.datetime(
             2022, 12, 26, 19, 31, tzinfo=tz.gettz("America/New_York"))
-        deps.time_source.set(test_datetime)
+        self.deps.time_source.set(test_datetime)
 
-        slide = ChristmasSlide(deps)
+        slide = ChristmasSlide(self.deps)
         self.assertFalse(slide.is_enabled())
