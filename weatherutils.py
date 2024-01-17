@@ -33,6 +33,7 @@ _ICON_MAPPING = {
     "fzra":            "rain1",           # Freezing rain
     "rain_fzra":       "rain1",           # Rain/freezing rain
     "snow_fzra":       "rain_snow",       # Freezing rain/snow
+    "winter_mix":      "rain_snow",       # Wintry mix
     "sleet":           "rain1",           # Sleet
     "rain":            "rain1",           # Rain
     "rain_showers":    "rain0",           # Rain showers (high cloud cover)
@@ -42,6 +43,8 @@ _ICON_MAPPING = {
     "tsra_hi":         "lightning",       # Thunderstorm (low cloud cover)
     "blizzard":        "snow",            # Blizzard
     "fog":             "cloud",           # Fog/mist
+    "haze":            "cloud",           # Haze
+    # Known missing: hot, cold
 }
 
 

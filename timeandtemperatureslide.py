@@ -96,7 +96,9 @@ class TimeAndTemperatureSlide(AbstractSlide):
         self.last_observations_retrieval = reported_time
         self.current_temp = int(
             celsius_to_fahrenheit(data["temperature"]["value"]))
-        self.current_icon = icon_url_to_weather_glyph(data["icon"])
+        self.current_icon = None
+        if "icon" in data:
+            self.current_icon = icon_url_to_weather_glyph(data["icon"])
 
         return True
 
