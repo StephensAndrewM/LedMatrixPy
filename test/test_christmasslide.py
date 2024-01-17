@@ -28,7 +28,15 @@ class ChristmasSlideTest(SlideTest):
         self.assertTrue(slide.is_enabled())
         self.assertRenderMatchesGolden(slide)
 
-    def test_not_nabled_after_christmas(self) -> None:
+    def test_not_enabled_long_before_christmas(self) -> None:
+        test_datetime = datetime.datetime(
+            2022, 11, 24, 19, 31, tzinfo=tz.gettz("America/New_York"))
+        self.deps.time_source.set(test_datetime)
+
+        slide = ChristmasSlide(self.deps)
+        self.assertFalse(slide.is_enabled())
+
+    def test_not_enabled_after_christmas(self) -> None:
         test_datetime = datetime.datetime(
             2022, 12, 26, 19, 31, tzinfo=tz.gettz("America/New_York"))
         self.deps.time_source.set(test_datetime)

@@ -64,6 +64,9 @@ _TREE_LIGHTS = [
 ]
 
 
+_MAX_DAYS_BEFORE_CHRISTMAS = datetime.timedelta(days=30)
+
+
 class ChristmasSlide(AbstractSlide):
     time_source: TimeSource
     christmas_date: datetime.datetime
@@ -82,7 +85,8 @@ class ChristmasSlide(AbstractSlide):
                 self.tree_points.append((i, j))
 
     def is_enabled(self) -> bool:
-        return self.christmas_date > self.time_source.now()
+        # Slide shouldn't appear after Christmas or too far before Christmas.
+        return self.christmas_date > self.time_source.now() and self.christmas_date - self.time_source.now() < _MAX_DAYS_BEFORE_CHRISTMAS
 
     def get_type(self) -> SlideType:
         return SlideType.HALF_WIDTH
@@ -116,5 +120,6 @@ class ChristmasSlide(AbstractSlide):
     def _draw_countdown(self, draw: ImageDraw, x: int) -> None:
         # Add one day to account for the fraction of today remaining.
         days = (self.christmas_date - self.time_source.now()).days + 1
-        draw_string(draw, str(days), x, 8, Align.CENTER, GlyphSet.FONT_7PX, GREEN)
+        draw_string(draw, str(days), x, 8, Align.CENTER,
+                    GlyphSet.FONT_7PX, GREEN)
         draw_string(draw, "DAYS", x, 16, Align.CENTER, GlyphSet.FONT_7PX, RED)
