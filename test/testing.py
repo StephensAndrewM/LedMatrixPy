@@ -46,9 +46,12 @@ class FakeRequester(Requester):
 
     def start(self) -> None:
         for endpoint in self.configured_endpoints:
-            if endpoint.url in self.expected_responses:
+            url = endpoint.get_url()
+            if url is None:
+                continue
+            if url in self.expected_responses:
                 self.last_parse_successful = endpoint.parse_callback(
-                    self.expected_responses[endpoint.url])
+                    self.expected_responses[url])
             else:
                 endpoint.error_callback(_DEFAULT_ERROR_RESPONSE)
 
@@ -112,6 +115,9 @@ class SlideTest(unittest.TestCase):
                 "Expected no output, but something was rendered. Saved candidate to %s" % actual_img_filename)
 
     def assertRenderMatchesGolden(self, slide: AbstractSlide) -> None:
+        # if not slide.is_enabled():
+        # raise AssertionError("Cannot compare to golden because slide is not enabled")
+
         actual_img = create_slide(slide.get_type())
         slide.draw(actual_img)
         image_name_base = self._image_name_from_test_name()

@@ -1,0 +1,31 @@
+{
+    "gameData": {
+        "status": {
+            "abstractGameState": "Live"
+        },
+        "teams": {
+            "away": {
+                "name": "Detroit Tigers",
+                "abbreviation": "DET"
+            },
+            "home": {
+                "name": "New York Mets",
+                "abbreviation": "NYM"
+            }
+        }
+    },
+    "liveData": {
+        "linescore": {
+            "currentInning": 3,
+            "isTopInning": false,
+            "teams": {
+                "home": {
+                    "runs": 3
+                },
+                "away": {
+                    "runs": 1
+                }
+            }
+        }
+    }
+}

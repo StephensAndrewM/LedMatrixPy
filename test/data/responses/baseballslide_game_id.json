@@ -1,0 +1,24 @@
+{
+    "dates": [
+        {
+            "games": [
+                {
+                    "link": "/api/v1.1/game/12345/feed/live",
+                    "gameDate": "2024-04-13T17:40:00Z",
+                    "teams": {
+                        "away": {
+                            "team": {
+                                "name": "Kansas City Royals"
+                            }
+                        },
+                        "home": {
+                            "team": {
+                                "name": "New York Mets"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

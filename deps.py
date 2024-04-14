@@ -8,7 +8,7 @@ class Dependencies:
 
     def __init__(self) -> None:
         self._time_source = SystemTimeSource()
-        self._requester = HttpRequester()
+        self._requester = HttpRequester(self._time_source)
 
     def get_time_source(self) -> TimeSource:
         return self._time_source

@@ -8,6 +8,7 @@ import requests
 from PIL import ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide
+from baseballslide import BaseballSlide
 from christmasslide import ChristmasSlide
 from config import SlideConfig, load_config
 from controller import Controller
@@ -15,9 +16,9 @@ from deps import Dependencies
 from display import Display, MatrixDisplay
 from drawing import create_slide
 from forecastslide import ForecastSlide
-from nycsubwayslide import NycSubwaySlide
-from internetstatusslide import InternetStatusSlide
 from imagewriter import write_grid_to_file
+from internetstatusslide import InternetStatusSlide
+from nycsubwayslide import NycSubwaySlide
 from show import Show
 from timeandtemperatureslide import TimeAndTemperatureSlide
 
@@ -96,6 +97,8 @@ def create_slide_from_config(slide_config: SlideConfig, deps: Dependencies) -> A
         return NycSubwaySlide(deps, options)
     elif type == "InternetStatusSlide":
         return InternetStatusSlide(deps)
+    elif type == "BaseballSlide":
+        return BaseballSlide(deps, options)
     else:
         raise AssertionError("Unknown slide type %s", slide_config["type"])
 

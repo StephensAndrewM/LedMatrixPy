@@ -3,10 +3,13 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Protocol
 
 import requests
+from croniter import croniter
+
+from timesource import TimeSource
 
 _LOG_REQUESTS = False
 
@@ -21,14 +24,50 @@ class ErrorCallback(Protocol):
         pass
 
 
+class UrlCallback(Protocol):
+    def __call__(self) -> Optional[str]:
+        pass
+
+
 @dataclass
 class Endpoint:
-    url: str
     name: str
-    refresh_interval: timedelta
     parse_callback: ParseCallback
     error_callback: ErrorCallback
+    url: Optional[str] = None
+    url_callback: Optional[UrlCallback] = None
+    refresh_interval: Optional[timedelta] = None
+    refresh_schedule: Optional[str] = None
     headers: Dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self):
+        # Ensure that only one of url or url_callback is set.
+        if self.url is None and self.url_callback is None:
+            raise TypeError("Either url or url_callback must be specified.")
+        if self.url is not None and self.url_callback is not None:
+            raise TypeError(
+                "One one of url or url_callback should be specified.")
+
+        # Ensure that only one of refresh_interval or refresh_schedule is set.
+        if self.refresh_interval is None and self.refresh_schedule is None:
+            raise TypeError(
+                "Either refresh_interval or refresh_schedule must be specified.")
+        if self.refresh_interval is not None and self.refresh_schedule is not None:
+            raise TypeError(
+                "Only one of refresh_interval or refresh_schedule should be specified.")
+
+        # If refresh_schedule is given, it must be a valid cron expression.
+        if self.refresh_schedule is not None:
+            if not croniter.is_valid(self.refresh_schedule):
+                raise TypeError("Invalid refresh_schedule")
+
+    def get_url(self) -> Optional[str]:
+        if self.url is not None:
+            return self.url
+        elif self.url_callback is not None:
+            return self.url_callback()
+        else:
+            return None
 
 
 class Requester(ABC):
@@ -47,31 +86,38 @@ class Requester(ABC):
 
 class RequesterThread:
     endpoint: Endpoint
-    timer: threading.Timer
+    time_source: TimeSource
     failures_without_success: int
+    timer: threading.Timer
 
-    def __init__(self, endpoint: Endpoint) -> None:
+    def __init__(self, endpoint: Endpoint, time_source: TimeSource) -> None:
         self.endpoint = endpoint
+        self.time_source = time_source
         self.failures_without_success = 0
 
     def start(self) -> None:
         logging.debug("Starting requests to %s", self.endpoint.name)
-        self.request_with_retries()
+        self._request_with_retries()
 
     def stop(self) -> None:
         if self.timer is not None:
             self.timer.cancel()
 
-    def request_with_retries(self) -> None:
+    def _request_with_retries(self) -> None:
+        url = self.endpoint.get_url()
+        # Missing URL may indicate that there is temporarily nothing to request.
+        if url is None:
+            self._schedule_next_request()
+            return
+
         try:
-            response = requests.get(
-                self.endpoint.url, headers=self.endpoint.headers)
+            response = requests.get(url, headers=self.endpoint.headers)
         except Exception as e:
             self.failures_without_success += 1
             self.endpoint.error_callback(None)
             logging.warning("Exception from endpoint %s (failures: %d). Url: %s, exception: %s",
-                            self.endpoint.name, self.failures_without_success, self.endpoint.url, e)
-            self.schedule_retry()
+                            self.endpoint.name, self.failures_without_success, url, e)
+            self._schedule_retry()
             return
 
         self._log_to_file(response)
@@ -80,29 +126,44 @@ class RequesterThread:
             self.failures_without_success += 1
             self.endpoint.error_callback(response)
             logging.warning("Non-2xx response %d from endpoint %s (failures: %d). Url: %s, response: %s",
-                            response.status_code, self.endpoint.name, self.failures_without_success, self.endpoint.url, response.content)
-            self.schedule_retry()
+                            response.status_code, self.endpoint.name, self.failures_without_success, url, response.content)
+            self._schedule_retry()
             return
 
         parse_success = self.endpoint.parse_callback(response)
         if parse_success:
             self.failures_without_success = 0
-            self.timer = threading.Timer(
-                self.endpoint.refresh_interval.seconds, self.request_with_retries)
-            self.timer.start()
+            self._schedule_next_request()
         else:
             self.failures_without_success += 1
-            self.schedule_retry()
+            self._schedule_retry()
 
-    def schedule_retry(self) -> None:
-        wait_time = self.endpoint.refresh_interval.seconds
+    def _schedule_retry(self) -> None:
         if self.failures_without_success == 1:
-            wait_time = 1
+            self.timer = threading.Timer(1, self._request_with_retries)
+            self.timer.start()
         elif self.failures_without_success == 2:
-            wait_time = 30
+            self.timer = threading.Timer(30, self._request_with_retries)
+            self.timer.start()
+        else:
+            self._schedule_next_request()
 
-        self.timer = threading.Timer(wait_time, self.request_with_retries)
-        self.timer.start()
+    def _schedule_next_request(self) -> None:
+        if self.endpoint.refresh_interval is not None:
+            logging.debug("Scheduling next request in %d seconds",
+                          self.endpoint.refresh_interval.seconds)
+            self.timer = threading.Timer(
+                self.endpoint.refresh_interval.seconds, self._request_with_retries)
+            self.timer.start()
+        elif self.endpoint.refresh_schedule is not None:
+            next = croniter(self.endpoint.refresh_schedule,
+                            self.time_source.now()).get_next(datetime)
+            time_until_next = next - self.time_source.now()
+            logging.debug(
+                "Scheduling next request in %d seconds (at %s)", time_until_next.seconds, next)
+            self.timer = threading.Timer(
+                time_until_next.seconds, self._request_with_retries)
+            self.timer.start()
 
     def _log_to_file(self, content: requests.models.Response) -> None:
         if _LOG_REQUESTS:
@@ -113,10 +174,12 @@ class RequesterThread:
 
 
 class HttpRequester(Requester):
+    time_source: TimeSource
     configured_endpoints: List[Endpoint]
     threads: List[RequesterThread]
 
-    def __init__(self) -> None:
+    def __init__(self, time_source: TimeSource) -> None:
+        self.time_source = time_source
         self.configured_endpoints = []
         self.threads = []
 
@@ -124,7 +187,7 @@ class HttpRequester(Requester):
         self.configured_endpoints.append(endpoint)
 
     def start(self) -> None:
-        self.threads = [RequesterThread(endpoint)
+        self.threads = [RequesterThread(endpoint, self.time_source)
                         for endpoint in self.configured_endpoints]
         for t in self.threads:
             t.start()
