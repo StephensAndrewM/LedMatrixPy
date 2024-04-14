@@ -115,8 +115,8 @@ class SlideTest(unittest.TestCase):
                 "Expected no output, but something was rendered. Saved candidate to %s" % actual_img_filename)
 
     def assertRenderMatchesGolden(self, slide: AbstractSlide) -> None:
-        # if not slide.is_enabled():
-        # raise AssertionError("Cannot compare to golden because slide is not enabled")
+        if not slide.is_enabled():
+            raise AssertionError("Cannot compare to golden because slide is not enabled")
 
         actual_img = create_slide(slide.get_type())
         slide.draw(actual_img)

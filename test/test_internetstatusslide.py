@@ -25,7 +25,6 @@ class InternetStatusSlideTest(SlideTest):
         self.deps.get_requester().clear_expectation(_PRESENCE_URL)
         self.deps.get_requester().start()
 
-        self.assertTrue(self.slide.is_enabled())
         self.assertRenderMatchesGolden(self.slide)
 
     def test_internet_present(self) -> None:
@@ -34,4 +33,3 @@ class InternetStatusSlideTest(SlideTest):
 
         # Message is still displayed but the slide would be disabled so it's okay.
         self.assertFalse(self.slide.is_enabled())
-        self.assertRenderMatchesGolden(self.slide)
