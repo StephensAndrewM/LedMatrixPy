@@ -26,6 +26,16 @@
                     "runs": 2
                 }
             }
+        },
+        "plays": {
+            "currentPlay": {
+                "count": {
+                    "outs": 3
+                },
+                "about": {
+                    "endTime": "2024-04-13T20:22:22.000Z"
+                }
+            }
         }
     }
 }

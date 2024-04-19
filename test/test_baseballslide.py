@@ -99,10 +99,24 @@ class BaseballSlideTest(SlideTest):
 
         self.assertRenderMatchesGolden(self.slide)
 
-    def test_scores_received_after_end(self) -> None:
-        # Set current time to after start of game (exact value doesn't matter)
+    def test_scores_received_soon_after_end(self) -> None:
+        # Set current time to after end of game (10 minutes after last play).
         test_datetime = datetime.datetime(
-            2024, 4, 13, 14, 45, 0, 0, tz.gettz("America/New_York"))
+            2024, 4, 13, 16, 32, 22, 0, tz.gettz("America/New_York"))
+        self.deps.time_source.set(test_datetime)
+
+        self.deps.get_requester().expect(_DEFAULT_GAME_ID_URL,
+                                         "baseballslide_game_id.json")
+        self.deps.get_requester().expect(_DEFAULT_GAME_STATS_URL,
+                                         "baseballslide_game_afterend.json")
+        self.deps.get_requester().start()
+
+        self.assertRenderMatchesGolden(self.slide)
+
+    def test_scores_received_long_after_end(self) -> None:
+        # Set current time to after end of game (2h after last play).
+        test_datetime = datetime.datetime(
+            2024, 4, 13, 18, 22, 22, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(test_datetime)
 
         self.deps.get_requester().expect(_DEFAULT_GAME_ID_URL,

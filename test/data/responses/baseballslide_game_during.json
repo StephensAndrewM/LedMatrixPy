@@ -25,6 +25,21 @@
                 "away": {
                     "runs": 1
                 }
+            },
+            "offense": {
+                "third": {
+                    "id": 1
+                }
+            }
+        },
+        "plays": {
+            "currentPlay": {
+                "count": {
+                    "outs": 1
+                },
+                "about": {
+                    "endTime": "2024-04-13T12:34:56.789Z"
+                }
             }
         }
     }
