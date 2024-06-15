@@ -17,7 +17,7 @@ from weatherutils import (NWS_HEADERS, celsius_to_fahrenheit,
                           icon_url_to_weather_glyph)
 
 _OBSERVATIONS_REFRESH_INTERVAL = datetime.timedelta(minutes=5)
-_OBSERVATIONS_STALENESS_THRESHOLD = datetime.timedelta(hours=2)
+_OBSERVATIONS_STALENESS_THRESHOLD = datetime.timedelta(hours=3)
 
 
 class TimeAndTemperatureSlide(AbstractSlide):
@@ -96,9 +96,14 @@ class TimeAndTemperatureSlide(AbstractSlide):
         self.last_observations_retrieval = reported_time
         self.current_temp = int(
             celsius_to_fahrenheit(data["temperature"]["value"]))
+
         self.current_icon = None
         if "icon" in data:
-            self.current_icon = icon_url_to_weather_glyph(data["icon"])
+            icon_url = data["icon"]
+            if isinstance(icon_url, str):
+                self.current_icon = icon_url_to_weather_glyph(data["icon"])
+            else:
+                logging.warning("Got icon url that wasn't a string" % icon_url)
 
         return True
 

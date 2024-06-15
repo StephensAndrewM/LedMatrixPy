@@ -3,7 +3,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+import datetime
 from typing import Dict, List, Optional, Protocol
 
 import requests
@@ -36,7 +36,7 @@ class Endpoint:
     error_callback: ErrorCallback
     url: Optional[str] = None
     url_callback: Optional[UrlCallback] = None
-    refresh_interval: Optional[timedelta] = None
+    refresh_interval: Optional[datetime.timedelta] = None
     refresh_schedule: Optional[str] = None
     headers: Dict[str, str] = field(default_factory=dict)
 
@@ -115,7 +115,7 @@ class RequesterThread:
         except Exception as e:
             self.failures_without_success += 1
             self.endpoint.error_callback(None)
-            logging.warning("Exception from endpoint %s (failures: %d). Url: %s, exception: %s",
+            logging.warning("Exception making request for endpoint %s (failures: %d). Url: %s, exception: %s",
                             self.endpoint.name, self.failures_without_success, url, e)
             self._schedule_retry()
             return
@@ -130,7 +130,14 @@ class RequesterThread:
             self._schedule_retry()
             return
 
-        parse_success = self.endpoint.parse_callback(response)
+        try:
+            parse_success = self.endpoint.parse_callback(response)
+        except Exception as e:
+            self.failures_without_success += 1
+            logging.warning("Exception parsing response from endpoint %s (failures: %d). Exception: %s", self.endpoint.name, self.failures_without_success, e)
+            self._schedule_retry()
+            return
+
         if parse_success:
             self.failures_without_success = 0
             self._schedule_next_request()
@@ -157,7 +164,7 @@ class RequesterThread:
             self.timer.start()
         elif self.endpoint.refresh_schedule is not None:
             next = croniter(self.endpoint.refresh_schedule,
-                            self.time_source.now()).get_next(datetime)
+                            self.time_source.now()).get_next(datetime.datetime)
             time_until_next = next - self.time_source.now()
             logging.debug(
                 "Scheduling next request in %d seconds (at %s)", time_until_next.seconds, next)

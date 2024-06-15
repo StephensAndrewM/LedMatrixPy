@@ -64,7 +64,7 @@ class TimeAndTemperatureSlideTest(SlideTest):
         self.assertRenderMatchesGolden(self.slide)
 
     def test_observations_reported_long_ago(self) -> None:
-        # Date is more than 2 hours in the future beyond timestamp in file.
+        # Date is more than 3 hours in the future beyond timestamp in file.
         test_datetime = datetime.datetime(
             2022, 5, 23, 14, 34, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(test_datetime)
@@ -81,7 +81,7 @@ class TimeAndTemperatureSlideTest(SlideTest):
                                          "timeandtemperatureslide_standard.json")
         self.deps.get_requester().start()
 
-        # Date becomes more than 2 hours in the future beyond timestamp in file.
+        # Date becomes more than 3 hours in the future beyond timestamp in file.
         test_datetime = datetime.datetime(
             2022, 5, 23, 14, 34, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(test_datetime)
