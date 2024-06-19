@@ -5,10 +5,10 @@ import time
 from time import sleep
 
 import requests
-from PIL import ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide
 from baseballslide import BaseballSlide
+from basketballslide import BasketballSlide
 from christmasslide import ChristmasSlide
 from config import SlideConfig, load_config
 from controller import Controller
@@ -99,6 +99,8 @@ def create_slide_from_config(slide_config: SlideConfig, deps: Dependencies) -> A
         return InternetStatusSlide(deps)
     elif type == "BaseballSlide":
         return BaseballSlide(deps, options)
+    elif type == "BasketballSlide":
+        return BasketballSlide(deps, options)
     else:
         raise AssertionError("Unknown slide type %s", slide_config["type"])
 
