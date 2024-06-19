@@ -32,6 +32,7 @@ class BaseballScore:
 class BaseballSlide(AbstractSlide):
     time_source: TimeSource
     team_name: str
+    team_code: str
 
     game_id: Optional[str]
     game_start: Optional[datetime.datetime]
@@ -43,6 +44,7 @@ class BaseballSlide(AbstractSlide):
     def __init__(self, deps: Dependencies, options: Dict[str, str]) -> None:
         self.time_source = deps.get_time_source()
         self.team_name = options.get('team_name', 'New York Mets')
+        self.team_code = options.get('team_code', 'NYM')
         self._reset_state()
 
         deps.get_requester().add_endpoint(Endpoint(
@@ -270,17 +272,15 @@ class BaseballSlide(AbstractSlide):
             self._draw_base(draw, 48-6, 6, self.score.runner_on_third)
 
     def _draw_team_score(self, draw: ImageDraw, y_offset: int, team_abbr: str, score: int) -> None:
-        team_color = WHITE
-        score_color = WHITE
-        # TODO have a more comprehensive list of colors
-        if team_abbr == "NYM":
-            team_color = ORANGE
-            score_color = BLUE
+        if team_abbr == self.team_code:
+            color = ORANGE
+        else:
+            color = WHITE
 
         draw_string(draw, team_abbr, 16, y_offset, Align.CENTER,
-                    GlyphSet.FONT_7PX, team_color)
+                    GlyphSet.FONT_7PX, color)
         draw_string(draw, "%d" % score, 16, y_offset+8,
-                    Align.CENTER, GlyphSet.FONT_7PX, score_color)
+                    Align.CENTER, GlyphSet.FONT_7PX, color)
 
     def _draw_base(self, draw: ImageDraw, origin_x: int, origin_y: int, filled: bool) -> None:
         if filled:
