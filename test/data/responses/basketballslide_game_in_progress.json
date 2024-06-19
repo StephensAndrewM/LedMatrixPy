@@ -1,0 +1,22 @@
+{
+    "meta": {
+        "time": "2024-04-13 16:30:00.1234"
+    },
+    "scoreboard": {
+        "games": [
+            {
+                "gameEt": "2024-04-13T16:00:00-04:00",
+                "gameStatusText": "Q4 1:25",
+                "gameStatus": 2,
+                "homeTeam": {
+                    "teamTricode": "NYL",
+                    "score": 70
+                },
+                "awayTeam": {
+                    "teamTricode": "IND",
+                    "score": 30
+                }
+            }
+        ]
+    }
+}

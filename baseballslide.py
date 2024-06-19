@@ -46,14 +46,14 @@ class BaseballSlide(AbstractSlide):
         self._reset_state()
 
         deps.get_requester().add_endpoint(Endpoint(
-            name="game_id",
+            name="mlb_game_id",
             url_callback=self.game_id_url_callback,
             refresh_schedule='0 9 * * *',
             parse_callback=self._parse_game_id,
             error_callback=self._handle_game_id_error,
         ))
         deps.get_requester().add_endpoint(Endpoint(
-            name="game_stats",
+            name="mlb_game_stats",
             url_callback=self.game_stats_url_callback,
             refresh_interval=datetime.timedelta(minutes=1),
             parse_callback=self._parse_game_stats,
@@ -80,7 +80,7 @@ class BaseballSlide(AbstractSlide):
                 if (game.get('teams', {}).get('home', {}).get('team', {}).get('name', {}) == self.team_name
                         or game.get('teams', {}).get('away', {}).get('team', {}).get('name', {}) == self.team_name):
                     try:
-                        game_date_str = game.get('gameDate', {})
+                        game_date_str = game.get('gameDate', '')
                         start_time = self._parse_datetime(game_date_str)
                     except ValueError:
                         logging.warning(
@@ -90,7 +90,6 @@ class BaseballSlide(AbstractSlide):
                     self.game_id = game['link']
                     self.game_start = start_time
                     self.game_concluded = False
-                    self.last_event_time = None
                     # Return at first match. There should never be more than one match. Maybe double-headers?
                     return True
 
