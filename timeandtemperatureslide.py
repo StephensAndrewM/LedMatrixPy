@@ -103,7 +103,7 @@ class TimeAndTemperatureSlide(AbstractSlide):
             if isinstance(icon_url, str):
                 self.current_icon = icon_url_to_weather_glyph(data["icon"])
             else:
-                logging.warning("Got icon url that wasn't a string" % icon_url)
+                logging.warning("Got icon url that wasn't a string: %s", icon_url)
 
         return True
 
