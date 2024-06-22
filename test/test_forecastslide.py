@@ -54,7 +54,7 @@ class ForecastSlideTest(SlideTest):
                                          "forecastslide_afternoon.json")
 
         config_with_offset = _DEFAULT_CONFIG.copy()
-        config_with_offset["date_offset"] = 2
+        config_with_offset["date_offset"] = "2"
         slide_with_offset = ForecastSlide(self.deps, config_with_offset)
         self.deps.get_requester().start()
         self.assertTrue(self.slide.is_enabled())

@@ -18,12 +18,12 @@ class TimeAndTemperatureSlideTest(SlideTest):
 
     def setUp(self) -> None:
         super().setUp()
-        self.slide = TimeAndTemperatureSlide(self.deps, _DEFAULT_CONFIG)
-
         # This creates the widest possible time string.
         self.test_datetime = datetime.datetime(
             2022, 5, 23, 12, 34, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(self.test_datetime)
+
+        self.slide = TimeAndTemperatureSlide(self.deps, _DEFAULT_CONFIG)
 
     def test_render(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_OBSERVATIONS_URL,

@@ -15,6 +15,7 @@ from requester import Endpoint
 from timesource import TimeSource
 from weatherutils import (NWS_HEADERS, celsius_to_fahrenheit,
                           icon_url_to_weather_glyph)
+from timeutils import min_datetime_in_local_timezone
 
 _OBSERVATIONS_REFRESH_INTERVAL = datetime.timedelta(minutes=5)
 _OBSERVATIONS_STALENESS_THRESHOLD = datetime.timedelta(hours=3)
@@ -33,14 +34,13 @@ class TimeAndTemperatureSlide(AbstractSlide):
     def __init__(self, deps: Dependencies, options: Dict[str, str]) -> None:
         self.time_source = deps.get_time_source()
 
-        local_timezone = datetime.datetime.now().astimezone().tzinfo
-        self.last_observations_retrieval = datetime.datetime.min.replace(
-            tzinfo=local_timezone)
+        self.last_observations_retrieval = min_datetime_in_local_timezone(
+            self.time_source)
         self.current_temp = None
         self.current_icon = None
 
-        self.last_air_quality_retrieval = datetime.datetime.min.replace(
-            tzinfo=local_timezone)
+        self.last_air_quality_retrieval = min_datetime_in_local_timezone(
+            self.time_source)
         self.current_aqi = None
 
         observations_office = options.get("observations_office", "KBOS")
@@ -103,7 +103,8 @@ class TimeAndTemperatureSlide(AbstractSlide):
             if isinstance(icon_url, str):
                 self.current_icon = icon_url_to_weather_glyph(data["icon"])
             else:
-                logging.warning("Got icon url that wasn't a string: %s", icon_url)
+                logging.warning(
+                    "Got icon url that wasn't a string: %s", icon_url)
 
         return True
 

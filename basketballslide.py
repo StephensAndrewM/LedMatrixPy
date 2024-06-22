@@ -13,6 +13,7 @@ from drawing import AQUA, GRAY, WHITE, Align, Color, draw_string
 from glyphs import GlyphSet
 from requester import Endpoint
 from timesource import TimeSource
+from timeutils import parse_utc_datetime
 
 _SCOREBOARD_URL = 'https://cdn.wnba.com/static/json/liveData/scoreboard/todaysScoreboard_10.json'
 
@@ -73,11 +74,11 @@ class BasketballSlide(AbstractSlide):
             return True
 
         try:
-            game_time_str = game.get("gameEt", "")
-            start_time = datetime.datetime.fromisoformat(game_time_str)
+            game_time_str = game.get("gameTimeUTC", "")
+            start_time = parse_utc_datetime(game_time_str)
         except ValueError as e:
             logging.warning(
-                "Could not parse basketball game time: %s, %e", game_time_str, e)
+                "Could not parse basketball game time: %s, %s", game_time_str, e)
             return False
 
         self.game_start = start_time

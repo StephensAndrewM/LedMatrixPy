@@ -1,10 +1,10 @@
+import datetime
 import inspect
 import unittest
-from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import requests
-from google.protobuf import message, text_format
+from google.protobuf import message, text_format  # type: ignore
 from PIL import Image, ImageChops  # type: ignore
 
 from abstractslide import AbstractSlide
@@ -15,15 +15,21 @@ from timesource import TimeSource
 
 
 class FakeTimeSource(TimeSource):
-    clock_time: datetime
+    clock_time: Optional[datetime.datetime]
 
-    def set(self, now: datetime) -> None:
+    def __init__(self):
+        self.clock_time = None
+
+    def set(self, now: datetime.datetime) -> None:
         if now.tzinfo is None:
-            print(
+            raise Exception(
                 "Warning! Set the time zone on the testing datetime to match the real version.")
         self.clock_time = now
 
-    def now(self) -> datetime:
+    def now(self) -> datetime.datetime:
+        if self.clock_time is None:
+            raise Exception(
+                "Warning! Attempting to fetch time without setting it first.")
         return self.clock_time
 
 
@@ -116,7 +122,8 @@ class SlideTest(unittest.TestCase):
 
     def assertRenderMatchesGolden(self, slide: AbstractSlide) -> None:
         if not slide.is_enabled():
-            raise AssertionError("Cannot compare to golden because slide is not enabled")
+            raise AssertionError(
+                "Cannot compare to golden because slide is not enabled")
 
         actual_img = create_slide(slide.get_type())
         slide.draw(actual_img)
@@ -132,7 +139,7 @@ class SlideTest(unittest.TestCase):
         subclass = type(self).__name__.replace("Test", "")
         return subclass + "_" + calling_function
 
-    def _compare_to_golden(self, image_name_base: str, actual_img: Image) -> bool:
+    def _compare_to_golden(self, image_name_base: str, actual_img: Image) -> None:
         expected_img_filename = "%s/%s_golden.png" % (
             _GOLDEN_DIR, image_name_base)
         actual_img_filename = "%s/%s_actual.png" % (

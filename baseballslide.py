@@ -9,10 +9,11 @@ from PIL import Image, ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide, SlideType
 from deps import Dependencies
-from drawing import BLUE, GRAY, ORANGE, WHITE, YELLOW, Align, draw_string
+from drawing import GRAY, ORANGE, WHITE, YELLOW, Align, draw_string
 from glyphs import GlyphSet
 from requester import Endpoint
 from timesource import TimeSource
+from timeutils import parse_utc_datetime
 
 
 @dataclass
@@ -83,7 +84,7 @@ class BaseballSlide(AbstractSlide):
                         or game.get('teams', {}).get('away', {}).get('team', {}).get('name', {}) == self.team_name):
                     try:
                         game_date_str = game.get('gameDate', '')
-                        start_time = self._parse_datetime(game_date_str)
+                        start_time = parse_utc_datetime(game_date_str)
                     except ValueError:
                         logging.warning(
                             "Could not parse baseball game time: %s", game_date_str)
@@ -191,7 +192,7 @@ class BaseballSlide(AbstractSlide):
         current_play_end_time_str = current_play.get(
             'about', {}).get('endTime', '')
         try:
-            self.last_event_time = self._parse_datetime(
+            self.last_event_time = parse_utc_datetime(
                 current_play_end_time_str)
         except ValueError:
             logging.warning(
@@ -228,10 +229,6 @@ class BaseballSlide(AbstractSlide):
         self.game_concluded = True
         self.last_event_time = None
         self.score = None
-
-    # Dates are provided using Z suffix for UTC but Python doesn't support this.
-    def _parse_datetime(self, str: str) -> datetime.datetime:
-        return datetime.datetime.fromisoformat(str.replace("Z", "+00:00"))
 
     def get_type(self) -> SlideType:
         return SlideType.HALF_WIDTH

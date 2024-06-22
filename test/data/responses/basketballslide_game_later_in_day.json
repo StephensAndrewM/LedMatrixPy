@@ -5,7 +5,7 @@
     "scoreboard": {
         "games": [
             {
-                "gameEt": "2024-04-13T16:00:00-04:00",
+                "gameTimeUTC": "2024-04-13T20:00:00Z",
                 "gameStatusText": "4:00 pm ET",
                 "gameStatus": 1,
                 "homeTeam": {
