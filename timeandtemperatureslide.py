@@ -13,9 +13,9 @@ from drawing import (GRAY, RED, WHITE, YELLOW, Align, draw_glyph_by_name,
 from glyphs import GlyphSet
 from requester import Endpoint
 from timesource import TimeSource
+from timeutils import min_datetime_in_local_timezone
 from weatherutils import (NWS_HEADERS, celsius_to_fahrenheit,
                           icon_url_to_weather_glyph)
-from timeutils import min_datetime_in_local_timezone
 
 _OBSERVATIONS_REFRESH_INTERVAL = datetime.timedelta(minutes=5)
 _OBSERVATIONS_STALENESS_THRESHOLD = datetime.timedelta(hours=3)
@@ -98,7 +98,7 @@ class TimeAndTemperatureSlide(AbstractSlide):
             celsius_to_fahrenheit(data["temperature"]["value"]))
 
         self.current_icon = None
-        if "icon" in data:
+        if "icon" in data and data["icon"] is not None:
             icon_url = data["icon"]
             if isinstance(icon_url, str):
                 self.current_icon = icon_url_to_weather_glyph(data["icon"])
@@ -145,14 +145,14 @@ class TimeAndTemperatureSlide(AbstractSlide):
         observations_time_delta = self.time_source.now() - self.last_observations_retrieval
         time_y_offset = 0
         if (self.current_temp is not None and observations_time_delta <= _OBSERVATIONS_STALENESS_THRESHOLD):
+            temperature_x_offset = 0
             if self.current_icon:
                 draw_glyph_by_name(draw, self.current_icon,
                                    0, 16, GlyphSet.WEATHER, WHITE)
-            else:
-                draw_string(draw, "?", 6, 21, Align.LEFT,
-                            GlyphSet.FONT_7PX, GRAY)
+                temperature_x_offset = 18
+
             draw_string(draw, "%d°" % self.current_temp,
-                        18, 21, Align.LEFT, GlyphSet.FONT_7PX, WHITE)
+                        temperature_x_offset, 21, Align.LEFT, GlyphSet.FONT_7PX, WHITE)
 
             # Only draw AQI if we also have weather conditions.
             air_quality_time_delta = self.time_source.now() - self.last_air_quality_retrieval
@@ -161,7 +161,7 @@ class TimeAndTemperatureSlide(AbstractSlide):
                     draw_string(draw, "AQI", 50, 16, Align.CENTER,
                                 GlyphSet.FONT_7PX, RED)
                     draw_string(draw, str(self.current_aqi),
-                                50, 24, Align.CENTER, GlyphSet.FONT_7PX,    RED)
+                                50, 24, Align.CENTER, GlyphSet.FONT_7PX, RED)
 
         else:
             # Push down the date and time if there we don't have current conditions.
