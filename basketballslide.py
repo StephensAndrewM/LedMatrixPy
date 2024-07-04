@@ -32,7 +32,6 @@ class BasketballSlide(AbstractSlide):
     team_code: str
 
     game_start: Optional[datetime.datetime]
-    game_started: bool
     game_concluded: bool
     last_update_time: Optional[datetime.datetime]
     score: Optional[BasketballScore]
@@ -117,11 +116,10 @@ class BasketballSlide(AbstractSlide):
             return False
 
         try:
-            # API returns 4 digits of precision on nanoseconds. Python accepts only 3 or 6.
-            last_update_time_str = data.get("meta", {}).get("time", "")[
-                :-1] + "-04:00"
-            last_update_time = datetime.datetime.fromisoformat(
-                last_update_time_str)
+            # API returns no time zone, but the times are given in EST.
+            last_update_time_str = data.get(
+                "meta", {}).get("time", "") + "-04:00"
+            last_update_time = parse_utc_datetime(last_update_time_str)
         except ValueError as e:
             logging.warning(
                 "Could not parse basketball update timestamp: %s, %s", last_update_time_str, e)
@@ -135,18 +133,17 @@ class BasketballSlide(AbstractSlide):
             return False
 
         status = game.get("gameStatus", 0)
+        # 1 = Game has not yet started.
         if status == 1:
-            self.game_started = False
             self.game_concluded = False
+        # 2 = Game in progress.
         elif status == 2:
-            self.game_started = True
             self.game_concluded = False
+        # 3 = Game has ended.
         elif status == 3:
-            self.game_started = True
             self.game_concluded = True
         else:
             logging.warning("Unknown basketball status %d", status)
-            self.game_started = False
             self.game_concluded = True
             return False
 
@@ -196,8 +193,7 @@ class BasketballSlide(AbstractSlide):
 
     def _reset_state(self) -> None:
         self.game_start = None
-        self.game_started = False
-        self.game_concluded = True
+        self.game_concluded = False
         self.last_update_time = None
         self.score = None
 
@@ -207,7 +203,7 @@ class BasketballSlide(AbstractSlide):
     def is_enabled(self) -> bool:
         game_end_within_threshold = self.last_update_time is not None and (
             self.time_source.now() - self.last_update_time) < datetime.timedelta(hours=1)
-        return self.game_started and self.score is not None and (not self.game_concluded or game_end_within_threshold)
+        return self.score is not None and (not self.game_concluded or game_end_within_threshold)
 
     def draw(self, img: Image) -> None:
         draw = ImageDraw.Draw(img)

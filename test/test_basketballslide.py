@@ -27,7 +27,7 @@ class BasketballSlideTest(SlideTest):
         # Slide has nothing to display.
         self.assertFalse(self.slide.is_enabled())
 
-    def test_after_game_start_fetch(self) -> None:
+    def test_fetching_begins_after_game_starts(self) -> None:
         self.deps.get_requester().expect(_SCOREBOARD_URL,
                                          "basketballslide_game_later_in_day.json")
         self.deps.get_requester().start()
@@ -56,6 +56,7 @@ class BasketballSlideTest(SlideTest):
 
         # Even if no team is found, it should be logged as successful.
         self.assertTrue(self.deps.get_requester().last_parse_successful)
+        self.assertFalse(self.slide.is_enabled())
 
         # Advance past the start of the game, ensure we didn't take a different game by mistake.
         test_datetime = datetime.datetime(
