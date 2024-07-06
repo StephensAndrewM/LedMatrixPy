@@ -65,7 +65,7 @@ class BasketballSlideTest(SlideTest):
         self.assertEqual(self.slide.game_stats_url_callback(), None)
 
     def test_scores_received_during_game(self) -> None:
-        # Set current time to after start of game
+        # Set current time to after start of game.
         test_datetime = datetime.datetime(
             2024, 4, 13, 16, 1, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(test_datetime)
@@ -77,9 +77,9 @@ class BasketballSlideTest(SlideTest):
         self.assertRenderMatchesGolden(self.slide)
 
     def test_scores_received_soon_after_end(self) -> None:
-        # Set current time to after end of game (10 minutes after last update).
+        # Set current time to after end of game (3h after game start).
         test_datetime = datetime.datetime(
-            2024, 4, 13, 17, 10, 0, 0, tz.gettz("America/New_York"))
+            2024, 4, 13, 19, 10, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(test_datetime)
 
         self.deps.get_requester().expect(_SCOREBOARD_URL,
@@ -89,9 +89,9 @@ class BasketballSlideTest(SlideTest):
         self.assertRenderMatchesGolden(self.slide)
 
     def test_scores_received_long_after_end(self) -> None:
-        # Set current time to after end of game (2h after last update).
+        # Set current time to after end of game (4h after game start).
         test_datetime = datetime.datetime(
-            2024, 4, 13, 18, 30, 0, 0, tz.gettz("America/New_York"))
+            2024, 4, 13, 20, 30, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(test_datetime)
 
         self.deps.get_requester().expect(_SCOREBOARD_URL,

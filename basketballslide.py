@@ -31,9 +31,8 @@ class BasketballSlide(AbstractSlide):
     time_source: TimeSource
     team_code: str
 
-    game_start: Optional[datetime.datetime]
+    game_start_time: Optional[datetime.datetime]
     game_concluded: bool
-    last_update_time: Optional[datetime.datetime]
     score: Optional[BasketballScore]
 
     def __init__(self, deps: Dependencies, options: Dict[str, str]) -> None:
@@ -42,11 +41,11 @@ class BasketballSlide(AbstractSlide):
         self._reset_state()
 
         deps.get_requester().add_endpoint(Endpoint(
-            name="wnba_game_start",
+            name="wnba_game_start_time",
             url=_SCOREBOARD_URL,
             refresh_schedule='0 9 * * *',
-            parse_callback=self._parse_game_start,
-            error_callback=self._handle_game_start_error,
+            parse_callback=self._parse_game_start_time,
+            error_callback=self._handle_game_start_time_error,
         ))
         deps.get_requester().add_endpoint(Endpoint(
             name="wnba_game_stats",
@@ -56,7 +55,7 @@ class BasketballSlide(AbstractSlide):
             error_callback=self._handle_game_stats_error,
         ))
 
-    def _parse_game_start(self, response: requests.models.Response) -> bool:
+    def _parse_game_start_time(self, response: requests.models.Response) -> bool:
         self._reset_state()
 
         try:
@@ -80,23 +79,22 @@ class BasketballSlide(AbstractSlide):
                 "Could not parse basketball game time: %s, %s", game_time_str, e)
             return False
 
-        self.game_start = start_time
+        self.game_start_time = start_time
         self.game_concluded = False
-        self.last_update_time = None
         return True
 
-    def _handle_game_start_error(self, response: Optional[requests.models.Response]) -> None:
+    def _handle_game_start_time_error(self, response: Optional[requests.models.Response]) -> None:
         self._reset_state()
 
     def game_stats_url_callback(self) -> Optional[str]:
-        if self.game_start is None:
+        if self.game_start_time is None:
             logging.debug(
                 "No game stats URL generated because no game start time.")
             return None
 
-        if self.time_source.now() < self.game_start:
+        if self.time_source.now() < self.game_start_time:
             logging.debug("No game stats URL generated because start time %s is before current time %s.",
-                          self.game_start, self.time_source.now())
+                          self.game_start_time, self.time_source.now())
             return None
 
         if self.game_concluded:
@@ -113,16 +111,6 @@ class BasketballSlide(AbstractSlide):
         except JSONDecodeError:
             logging.warning(
                 "Failed to decode basketball game stats JSON: %s", response.content)
-            return False
-
-        try:
-            # API returns no time zone, but the times are given in EST.
-            last_update_time_str = data.get(
-                "meta", {}).get("time", "") + "-04:00"
-            last_update_time = parse_utc_datetime(last_update_time_str)
-        except ValueError as e:
-            logging.warning(
-                "Could not parse basketball update timestamp: %s, %s", last_update_time_str, e)
             return False
 
         game = self._find_game_in_scoreboard(data)
@@ -170,7 +158,6 @@ class BasketballSlide(AbstractSlide):
             logging.warning("Failed to get away team score")
             return False
 
-        self.last_update_time = last_update_time
         self.score = BasketballScore(
             home_team_abbr=home_team_abbr,
             home_team_score=home_team_score,
@@ -192,17 +179,17 @@ class BasketballSlide(AbstractSlide):
         return None
 
     def _reset_state(self) -> None:
-        self.game_start = None
+        self.game_start_time = None
         self.game_concluded = False
-        self.last_update_time = None
         self.score = None
 
     def get_type(self) -> SlideType:
         return SlideType.HALF_WIDTH
 
     def is_enabled(self) -> bool:
-        game_end_within_threshold = self.last_update_time is not None and (
-            self.time_source.now() - self.last_update_time) < datetime.timedelta(hours=1)
+        # Approximate a game as ~3h (upper bound) with 1 hour to show the result.
+        game_end_within_threshold = self.game_start_time is not None and (
+            self.time_source.now() - self.game_start_time) < datetime.timedelta(hours=4)
         return self.score is not None and (not self.game_concluded or game_end_within_threshold)
 
     def draw(self, img: Image) -> None:
