@@ -1,0 +1,47 @@
+{
+    "gameData": {
+        "status": {
+            "abstractGameState": "Live",
+            "detailedState": "Delayed: Rain"
+        },
+        "teams": {
+            "away": {
+                "name": "Detroit Tigers",
+                "abbreviation": "DET"
+            },
+            "home": {
+                "name": "New York Mets",
+                "abbreviation": "NYM"
+            }
+        }
+    },
+    "liveData": {
+        "linescore": {
+            "currentInning": 3,
+            "isTopInning": false,
+            "teams": {
+                "home": {
+                    "runs": 3
+                },
+                "away": {
+                    "runs": 1
+                }
+            },
+            "offense": {
+                "third": {
+                    "id": 1
+                }
+            }
+        },
+        "plays": {
+            "currentPlay": {
+                "count": {
+                    "outs": 1
+                },
+                "about": {
+                    "endTime": "2024-04-13T12:34:56.789Z"
+                }
+            }
+        }
+    }
+}

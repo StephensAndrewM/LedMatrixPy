@@ -9,11 +9,17 @@ from PIL import Image, ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide, SlideType
 from deps import Dependencies
-from drawing import GRAY, ORANGE, WHITE, YELLOW, Align, draw_string
+from drawing import (AQUA, GRAY, ORANGE, RED, WHITE, Align, draw_glyph_by_name,
+                     draw_string)
 from glyphs import GlyphSet
 from requester import Endpoint
 from timesource import TimeSource
 from timeutils import parse_utc_datetime
+
+_TEAM_COLORS = {
+    'NYM': ORANGE,
+    'BOS': RED,
+}
 
 
 @dataclass
@@ -25,6 +31,7 @@ class BaseballScore:
     inning: int
     top_of_inning: bool
     outs: int
+    in_rain_delay: bool
     runner_on_first: bool
     runner_on_second: bool
     runner_on_third: bool
@@ -33,7 +40,6 @@ class BaseballScore:
 class BaseballSlide(AbstractSlide):
     time_source: TimeSource
     team_name: str
-    team_code: str
 
     game_id: Optional[str]
     game_start: Optional[datetime.datetime]
@@ -45,7 +51,6 @@ class BaseballSlide(AbstractSlide):
     def __init__(self, deps: Dependencies, options: Dict[str, str]) -> None:
         self.time_source = deps.get_time_source()
         self.team_name = options.get('team_name', 'New York Mets')
-        self.team_code = options.get('team_code', 'NYM')
         self._reset_state()
 
         deps.get_requester().add_endpoint(Endpoint(
@@ -163,6 +168,10 @@ class BaseballSlide(AbstractSlide):
             self.game_started = False
             self.game_concluded = True
 
+        in_rain_delay = False
+        if status.get('detailedState', '') == 'Delayed: Rain':
+            in_rain_delay = True
+
         line_score = data.get('liveData', {}).get('linescore', {})
 
         if "currentInning" not in line_score:
@@ -211,6 +220,7 @@ class BaseballSlide(AbstractSlide):
             inning=line_score['currentInning'],
             top_of_inning=line_score['isTopInning'],
             outs=outs,
+            in_rain_delay=in_rain_delay,
             runner_on_first=runner_on_first,
             runner_on_second=runner_on_second,
             runner_on_third=runner_on_third,
@@ -255,8 +265,10 @@ class BaseballSlide(AbstractSlide):
         else:
             if self.score.top_of_inning:
                 inning_icon = "▲"
+                current_team_abbr = self.score.away_team_abbr
             else:
                 inning_icon = "▼"
+                current_team_abbr = self.score.home_team_abbr
             inning_str = "%s%d" % (inning_icon, self.score.inning)
 
             draw_string(draw, inning_str, 48, 16, Align.CENTER,
@@ -264,24 +276,28 @@ class BaseballSlide(AbstractSlide):
             draw_string(draw, "%d OUT" % self.score.outs, 48, 24, Align.CENTER,
                         GlyphSet.FONT_7PX, WHITE)
 
-            self._draw_base(draw, 48+6, 6, self.score.runner_on_first)
-            self._draw_base(draw, 48, 0, self.score.runner_on_second)
-            self._draw_base(draw, 48-6, 6, self.score.runner_on_third)
+            if self.score.in_rain_delay:
+                draw_glyph_by_name(draw, "rain1", 40, 0,
+                                   GlyphSet.WEATHER, AQUA)
+            else:
+                self._draw_base(
+                    draw, 48+6, 6, self.score.runner_on_first, current_team_abbr)
+                self._draw_base(
+                    draw, 48, 0, self.score.runner_on_second, current_team_abbr)
+                self._draw_base(
+                    draw, 48-6, 6, self.score.runner_on_third, current_team_abbr)
 
     def _draw_team_score(self, draw: ImageDraw, y_offset: int, team_abbr: str, score: int) -> None:
-        if team_abbr == self.team_code:
-            color = ORANGE
-        else:
-            color = WHITE
+        color = _TEAM_COLORS.get(team_abbr, WHITE)
 
         draw_string(draw, team_abbr, 16, y_offset, Align.CENTER,
                     GlyphSet.FONT_7PX, color)
         draw_string(draw, "%d" % score, 16, y_offset+8,
                     Align.CENTER, GlyphSet.FONT_7PX, color)
 
-    def _draw_base(self, draw: ImageDraw, origin_x: int, origin_y: int, filled: bool) -> None:
+    def _draw_base(self, draw: ImageDraw, origin_x: int, origin_y: int, filled: bool, team_abbr: str) -> None:
         if filled:
-            color = YELLOW
+            color = _TEAM_COLORS.get(team_abbr, WHITE)
         else:
             color = GRAY
 
