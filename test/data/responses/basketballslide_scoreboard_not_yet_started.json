@@ -2,16 +2,17 @@
     "scoreboard": {
         "games": [
             {
+                "gameCode": "20240413/NYLIND",
                 "gameTimeUTC": "2024-04-13T20:00:00Z",
-                "gameStatusText": "Q4 1:25",
-                "gameStatus": 2,
+                "gameStatusText": "4:00 pm ET",
+                "gameStatus": 1,
                 "homeTeam": {
                     "teamTricode": "NYL",
-                    "score": 70
+                    "score": 0
                 },
                 "awayTeam": {
                     "teamTricode": "IND",
-                    "score": 30
+                    "score": 0
                 }
             }
         ]

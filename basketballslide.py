@@ -15,6 +15,7 @@ from requester import Endpoint
 from timesource import TimeSource
 from timeutils import parse_utc_datetime
 
+_SCHEDULE_URL = 'https://cdn.wnba.com/static/json/staticData/rollingSchedule.json'
 _SCOREBOARD_URL = 'https://cdn.wnba.com/static/json/liveData/scoreboard/todaysScoreboard_10.json'
 
 
@@ -31,7 +32,9 @@ class BasketballSlide(AbstractSlide):
     time_source: TimeSource
     team_code: str
 
+    game_code: Optional[str]
     game_start_time: Optional[datetime.datetime]
+    game_started: bool
     game_concluded: bool
     score: Optional[BasketballScore]
 
@@ -42,7 +45,7 @@ class BasketballSlide(AbstractSlide):
 
         deps.get_requester().add_endpoint(Endpoint(
             name="wnba_game_start_time",
-            url=_SCOREBOARD_URL,
+            url=_SCHEDULE_URL,
             refresh_schedule='0 9 * * *',
             parse_callback=self._parse_game_start_time,
             error_callback=self._handle_game_start_time_error,
@@ -51,7 +54,7 @@ class BasketballSlide(AbstractSlide):
             name="wnba_game_stats",
             url_callback=self.game_stats_url_callback,
             refresh_interval=datetime.timedelta(minutes=1),
-            parse_callback=self._parse_game_stats,
+            parse_callback=self._parse_scoreboard,
             error_callback=self._handle_game_stats_error,
         ))
 
@@ -62,13 +65,12 @@ class BasketballSlide(AbstractSlide):
             data = response.json()
         except JSONDecodeError:
             logging.warning(
-                "Failed to decode basketball game ID JSON: %s", response.content)
+                "Failed to decode game ID JSON: %s", response.content)
             return False
 
-        game = self._find_game_in_scoreboard(data)
+        game = self._find_game_in_schedule(data)
         if game is None:
-            logging.debug(
-                "No basketball game found in game start parsing matching team code")
+            # Logging happens in helper function. Not an error, but not actionable.
             return True
 
         try:
@@ -79,6 +81,13 @@ class BasketballSlide(AbstractSlide):
                 "Could not parse basketball game time: %s, %s", game_time_str, e)
             return False
 
+        game_code = game.get("gameCode", "")
+        if not game_code:
+            logging.warning(
+                "Could not get game ID in game with matching team code")
+            return False
+
+        self.game_code = game_code
         self.game_start_time = start_time
         self.game_concluded = False
         return True
@@ -105,33 +114,35 @@ class BasketballSlide(AbstractSlide):
         # The URL is static but we want to avoid requesting when a game isn't in progress.
         return _SCOREBOARD_URL
 
-    def _parse_game_stats(self, response: requests.models.Response) -> bool:
+    def _parse_scoreboard(self, response: requests.models.Response) -> bool:
         try:
             data = response.json()
         except JSONDecodeError:
             logging.warning(
-                "Failed to decode basketball game stats JSON: %s", response.content)
+                "Failed to decode basketball scoreboard JSON: %s", response.content)
             return False
 
         game = self._find_game_in_scoreboard(data)
         if game is None:
-            # This function shouldn't have been called if the game couldn't be found, so here it's an error.
-            logging.warning(
-                "No basketball game found in game stats parsing matching team code")
+            # Logging happens in helper function. Not an error, but not actionable.
             return False
 
         status = game.get("gameStatus", 0)
         # 1 = Game has not yet started.
         if status == 1:
+            self.game_started = False
             self.game_concluded = False
         # 2 = Game in progress.
         elif status == 2:
+            self.game_started = True
             self.game_concluded = False
         # 3 = Game has ended.
         elif status == 3:
+            self.game_started = True
             self.game_concluded = True
         else:
             logging.warning("Unknown basketball status %d", status)
+            self.game_started = False
             self.game_concluded = True
             return False
 
@@ -171,15 +182,37 @@ class BasketballSlide(AbstractSlide):
         # Don't reset other data about the game, just the live scores.
         self.score = None
 
-    def _find_game_in_scoreboard(self, data: Any) -> Any:
-        for game in data.get("scoreboard", {}).get("games", []):
+    def _find_game_in_schedule(self, data: Any) -> Any:
+        games = data.get("rollingSchedule", {}).get("games", [])
+        for game in games:
             if (game.get("homeTeam", {}).get("teamTricode", "") == self.team_code
                     or game.get("awayTeam", {}).get("teamTricode", "") == self.team_code):
+                # Only get the game if it's the current day.
+                try:
+                    game_time_str = game.get("gameTimeUTC", "")
+                    start_time = parse_utc_datetime(game_time_str)
+                    if start_time.date() == self.time_source.now().date():
+                        return game
+                except ValueError as e:
+                    logging.warning(
+                        "Could not parse basketball game time: %s, %s", game_time_str, e)
+        logging.debug(
+            "Considered %d games in schedule but found no matches for %s", len(games), self.team_code)
+        return None
+
+    def _find_game_in_scoreboard(self, data: Any) -> Any:
+        games = data.get("scoreboard", {}).get("games", [])
+        for game in games:
+            if self.game_code and game.get("gameCode", "") == self.game_code:
                 return game
+        logging.debug(
+            "Considered %d games in scoreboard but found no matches for %s", len(games), self.game_code)
         return None
 
     def _reset_state(self) -> None:
+        self.game_code = None
         self.game_start_time = None
+        self.game_started = False
         self.game_concluded = False
         self.score = None
 
@@ -190,7 +223,7 @@ class BasketballSlide(AbstractSlide):
         # Approximate a game as ~3h (upper bound) with 1 hour to show the result.
         game_end_within_threshold = self.game_start_time is not None and (
             self.time_source.now() - self.game_start_time) < datetime.timedelta(hours=4)
-        return self.score is not None and (not self.game_concluded or game_end_within_threshold)
+        return self.score is not None and self.game_started and (not self.game_concluded or game_end_within_threshold)
 
     def draw(self, img: Image) -> None:
         draw = ImageDraw.Draw(img)

@@ -1,0 +1,36 @@
+{
+    "rollingSchedule": {
+        "games": [
+            {
+                "gameTimeUTC": "2024-04-12T20:00:00Z",
+                "gameCode": "20240412/NYLIND",
+                "homeTeam": {
+                    "teamTricode": "NYL"
+                },
+                "awayTeam": {
+                    "teamTricode": "IND"
+                }
+            },
+            {
+                "gameTimeUTC": "2024-04-13T20:00:00Z",
+                "gameCode": "20240413/ATLLVA",
+                "homeTeam": {
+                    "teamTricode": "ATL"
+                },
+                "awayTeam": {
+                    "teamTricode": "LVA"
+                }
+            },
+            {
+                "gameTimeUTC": "2024-04-13T20:00:00Z",
+                "gameCode": "20240413/NYLIND",
+                "homeTeam": {
+                    "teamTricode": "NYL"
+                },
+                "awayTeam": {
+                    "teamTricode": "IND"
+                }
+            }
+        ]
+    }
+}
