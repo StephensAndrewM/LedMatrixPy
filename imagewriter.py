@@ -1,6 +1,7 @@
 from PIL import Image, ImageDraw  # type: ignore
 
 from drawing import Color
+import logging
 
 RENDER_SCALE = 10
 DOT_PADDING = 2
@@ -22,7 +23,9 @@ def write_grid_to_file(name: str, base_img: Image) -> None:
             y1 = y0 + RENDER_SCALE - (DOT_PADDING * 2)
             draw.ellipse([x0, y0, x1, y1],
                          fill=_brightness_floor(pixel))
-    img.save("render/" + name + ".png")
+    filename = "render/" + name + ".png"
+    img.save(filename)
+    logging.info("Saved render of %s to %s", name, filename)
 
 
 # Forces rendering a gray dot if no color is being displayed.

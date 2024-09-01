@@ -35,7 +35,7 @@ def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(
-        format='%(asctime)s %(levelname)-8s %(message)s',
+        format='%(asctime)s %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
     if args.debug_log:
@@ -57,9 +57,11 @@ def generate_images() -> None:
     sleep(5)
     for slide in [static_slide, *rotating_slides]:
         img = create_slide(slide.get_type())
+        name = type(slide).__name__
+        if not slide.is_enabled():
+            logging.warning("Slide %s was drawn but was not enabled", name)
         slide.draw(img)
-        filename = type(slide).__name__
-        write_grid_to_file(filename, img)
+        write_grid_to_file(name, img)
     deps.get_requester().stop()
 
 
