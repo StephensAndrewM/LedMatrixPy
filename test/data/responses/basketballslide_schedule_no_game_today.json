@@ -1,15 +1,19 @@
 {
     "rollingSchedule": {
-        "games": [
+        "gameDates": [
             {
-                "gameTimeUTC": "2024-04-14T20:00:00Z",
-                "gameCode": "20240414/NYLIND",
-                "homeTeam": {
-                    "teamTricode": "NYL"
-                },
-                "awayTeam": {
-                    "teamTricode": "IND"
-                }
+                "games": [
+                    {
+                        "gameDateTimeUTC": "2024-04-14T20:00:00Z",
+                        "gameCode": "20240414/NYLIND",
+                        "homeTeam": {
+                            "teamTricode": "NYL"
+                        },
+                        "vistiorTeam": {
+                            "teamTricode": "IND"
+                        }
+                    }
+                ]
             }
         ]
     }

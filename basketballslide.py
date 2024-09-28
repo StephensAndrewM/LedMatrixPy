@@ -70,11 +70,11 @@ class BasketballSlide(AbstractSlide):
 
         game = self._find_game_in_schedule(data)
         if game is None:
-            # Logging happens in helper function. Not an error, but not actionable.
+            # Logging happens in helper function. This isn't an error since some days have no games.
             return True
 
         try:
-            game_time_str = game.get("gameTimeUTC", "")
+            game_time_str = game.get("gameDateTimeUTC", "")
             start_time = parse_utc_datetime(game_time_str)
         except ValueError as e:
             logging.warning(
@@ -183,21 +183,38 @@ class BasketballSlide(AbstractSlide):
         self.score = None
 
     def _find_game_in_schedule(self, data: Any) -> Any:
-        games = data.get("rollingSchedule", {}).get("games", [])
-        for game in games:
-            if (game.get("homeTeam", {}).get("teamTricode", "") == self.team_code
-                    or game.get("awayTeam", {}).get("teamTricode", "") == self.team_code):
-                # Only get the game if it's the current day.
-                try:
-                    game_time_str = game.get("gameTimeUTC", "")
-                    start_time = parse_utc_datetime(game_time_str)
-                    if start_time.date() == self.time_source.now().date():
-                        return game
-                except ValueError as e:
-                    logging.warning(
-                        "Could not parse basketball game time: %s, %s", game_time_str, e)
+        if "rollingSchedule" not in data:
+            logging.debug("Data contained no rollingSchedule")
+            return None
+        schedule = data.get("rollingSchedule", {})
+        if "gameDates" not in schedule:
+            logging.debug("Rolling schedule contained no gameDates")
+            return None
+        game_dates = schedule.get("gameDates", [])
+
+        found_games = 0
+        for game_date in game_dates:
+            if "games" not in game_date:
+                logging.debug("gameDates contained no games")
+                return None
+
+            games = game_date.get("games", [])
+            for game in games:
+                found_games += 1
+                if (game.get("homeTeam", {}).get("teamTricode", "") == self.team_code
+                        or game.get("visitorTeam", {}).get("teamTricode", "") == self.team_code):
+                    try:
+                        game_time_str = game.get("gameDateTimeUTC", "")
+                        start_time = parse_utc_datetime(game_time_str)
+                        logging.debug("Parsed start time string %s as %s",
+                                      game_time_str, start_time.date())
+                        if start_time.date() == self.time_source.now().date():
+                            return game
+                    except ValueError as e:
+                        logging.warning(
+                            "Could not parse basketball game time: %s, %s", game_time_str, e)
         logging.debug(
-            "Considered %d games in schedule but found no matches for %s", len(games), self.team_code)
+            "Considered %d games in %d game dates in schedule but found no matches for %s", found_games, len(game_dates),  self.team_code)
         return None
 
     def _find_game_in_scoreboard(self, data: Any) -> Any:
