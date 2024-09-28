@@ -23,6 +23,12 @@ class NycSubwaySlideTest(SlideTest):
         self.deps.time_source.set(test_datetime)
         self.slide = NycSubwaySlide(self.deps, _DEFAULT_CONFIG)
 
+    def test_error_response(self) -> None:
+        self.deps.get_requester().expect(_NQRW_URL, "forecastslide_evening.json")
+        self.deps.get_requester().start()
+        
+        self.assertFalse(self.slide.is_enabled())
+
     def test_has_no_departures(self) -> None:
         self.deps.get_requester().start()
 
@@ -47,7 +53,6 @@ class NycSubwaySlideTest(SlideTest):
         self.assertTrue(self.slide.is_enabled())
         self.assertRenderMatchesGolden(self.slide)
 
-
     def test_has_departures_all_lines(self) -> None:
         self.deps.get_requester().expect_with_proto_response(
             _NQRW_URL, "mta_nqrw.textproto", FeedMessage())
@@ -59,4 +64,3 @@ class NycSubwaySlideTest(SlideTest):
 
         self.assertTrue(self.slide.is_enabled())
         self.assertRenderMatchesGolden(self.slide)
-

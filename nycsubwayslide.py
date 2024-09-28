@@ -72,8 +72,7 @@ class NycSubwaySlide(AbstractSlide):
             data = FeedMessage()
             data.ParseFromString(response.content)
         except Exception as e:
-            logging.warning(
-                "Failed to decode GTFS realtime proto: %e, data %s", e, response.content)
+            logging.warning("Failed to decode GTFS realtime proto: %s", e)
             return False
 
         departures = []
