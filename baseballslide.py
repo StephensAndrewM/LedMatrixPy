@@ -85,6 +85,10 @@ class BaseballSlide(AbstractSlide):
         for date in data.get('dates', []):
             games = date.get('games', [])
             for game in games:
+                # Ignore spring training games.
+                if game.get("gameType", "") == "S": 
+                    continue
+
                 if (game.get('teams', {}).get('home', {}).get('team', {}).get('name', {}) == self.team_name
                         or game.get('teams', {}).get('away', {}).get('team', {}).get('name', {}) == self.team_name):
                     try:
