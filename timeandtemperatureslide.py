@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide, SlideType
 from deps import Dependencies
-from drawing import (GRAY, RED, WHITE, YELLOW, Align, draw_glyph_by_name,
+from drawing import (RED, WHITE, YELLOW, Align, draw_glyph_by_name,
                      draw_string)
 from glyphs import GlyphSet
 from requester import Endpoint
@@ -43,15 +43,16 @@ class TimeAndTemperatureSlide(AbstractSlide):
             self.time_source)
         self.current_aqi = None
 
-        observations_office = options.get("observations_office", "KBOS")
-        deps.get_requester().add_endpoint(Endpoint(
-            name="weather_observations",
-            url="https://api.weather.gov/stations/%s/observations/latest" % observations_office,
-            refresh_interval=_OBSERVATIONS_REFRESH_INTERVAL,
-            parse_callback=self._parse_observations,
-            error_callback=self._handle_observations_error,
-            headers=NWS_HEADERS,
-        ))
+        observations_offices = options.get("observations_offices", ["KBOS"])
+        for office in observations_offices:
+            deps.get_requester().add_endpoint(Endpoint(
+                name=("weather_observations_%s" % office),
+                url="https://api.weather.gov/stations/%s/observations/latest" % office,
+                refresh_interval=_OBSERVATIONS_REFRESH_INTERVAL,
+                parse_callback=self._parse_observations,
+                error_callback=self._handle_observations_error,
+                headers=NWS_HEADERS,
+            ))
 
         airnow_zip_code = options.get("airnow_zip_code", "")
         airnow_api_key = options.get("airnow_api_key", "")
@@ -90,6 +91,12 @@ class TimeAndTemperatureSlide(AbstractSlide):
         if observations_time_delta > _OBSERVATIONS_STALENESS_THRESHOLD:
             logging.warning(
                 "Received already stale observations (%s old)", observations_time_delta)
+            return False
+
+        # If we request from multiple offices, one might report newer results.
+        if reported_time <= self.last_observations_retrieval:
+            logging.debug("Newer observations already exist. Reported: %s, known %s",
+                          reported_time, self.last_observations_retrieval)
             return False
 
         # Assign all values at end in case an error returns otherwise.

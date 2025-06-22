@@ -44,7 +44,8 @@ _ICON_MAPPING = {
     "blizzard":        "snow",            # Blizzard
     "fog":             "cloud",           # Fog/mist
     "haze":            "cloud",           # Haze
-    # Known missing: hot, cold
+    "hot":             "sun",             # Hot
+    "cold":            "wind",            # Cold
 }
 
 

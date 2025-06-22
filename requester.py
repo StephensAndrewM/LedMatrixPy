@@ -1,9 +1,9 @@
+import datetime
 import logging
 import threading
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-import datetime
 from typing import Dict, List, Optional, Protocol
 
 import requests
@@ -176,8 +176,11 @@ class RequesterThread:
         if _LOG_REQUESTS:
             filename = "debug/%d_%s.txt" % (int(time.time()),
                                             self.endpoint.name)
-            with open(filename, 'w') as f:
-                f.write(content.content.decode('utf-8'))
+            try:
+                with open(filename, 'w') as f:
+                    f.write(content.content.decode('utf-8'))
+            except Exception as e:
+                logging.warning("Failed writing content to file %s %s", filename, e)
 
 
 class HttpRequester(Requester):
