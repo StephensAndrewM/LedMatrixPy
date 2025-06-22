@@ -48,24 +48,12 @@ class NycSubwaySlide(AbstractSlide):
             error_callback=self._handle_error,
             headers=headers,
         ))
-        # Interestingly, the Franklin Avenue Shuttle is provided here
-        deps.get_requester().add_endpoint(Endpoint(
-            name="mta_ace",
-            url="https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace",
-            refresh_interval=_REFRESH_INTERVAL,
-            parse_callback=self._parse_s,
-            error_callback=self._handle_error,
-            headers=headers,
-        ))
 
     def _parse_q(self, response: requests.models.Response) -> bool:
         return self._parse(response, "Q")
 
     def _parse_b(self, response: requests.models.Response) -> bool:
-        return self._parse(response, "B")
-
-    def _parse_s(self, response: requests.models.Response) -> bool:
-        return self._parse(response, "FS")
+        return self._parse(response, "B") and self._parse(response, "FS")
 
     def _parse(self, response: requests.models.Response, expected_line: str) -> bool:
         try:
