@@ -24,13 +24,14 @@ class MatrixDisplay(Display):
         options.brightness = 40
         options.show_refresh_rate = False
         options.limit_refresh_rate_hz = 120
+        options.gpio_slowdown = 4
         # Sudo is needed to call ntpdate
         options.drop_privileges = False
         options.hardware_mapping = 'adafruit-hat-pwm'
         self.matrix = RGBMatrix(options=options)
 
     def draw(self, img: Image) -> None:
-        self.matrix.SetImage(img)
+        self.matrix.SetImage(img, unsafe=False)
 
     def clear(self) -> None:
         self.matrix.Clear()
