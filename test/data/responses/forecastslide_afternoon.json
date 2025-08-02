@@ -1,78 +1,351 @@
 {
-    "updateTime": "2022-06-30T18:29:26+00:00",
-    "validTimes": "2022-06-30T12:00:00+00:00/P8DT6H",
-    "periods": [
-        {
-            "number": 1,
-            "name": "This Afternoon",
-            "startTime": "2022-06-30T15:00:00-04:00",
-            "endTime": "2022-06-30T18:00:00-04:00",
-            "temperature": 70,
-            "temperatureUnit": "F",
-            "icon": "https://api.weather.gov/icons/land/day/few?size=medium"
-        },
-        {
-            "number": 2,
-            "name": "Tonight",
-            "startTime": "2022-06-30T18:00:00-04:00",
-            "endTime": "2022-07-01T06:00:00-04:00",
-            "temperature": 52,
-            "temperatureUnit": "F",
-            "icon": "https://api.weather.gov/icons/land/night/few?size=medium"
-        },
-        {
-            "number": 3,
-            "name": "Friday",
-            "startTime": "2022-07-01T06:00:00-04:00",
-            "endTime": "2022-07-01T18:00:00-04:00",
-            "temperature": 61,
-            "temperatureUnit": "F",
-            "icon": "https://api.weather.gov/icons/land/day/skc?size=medium"
-        },
-        {
-            "number": 4,
-            "name": "Friday Night",
-            "startTime": "2022-07-01T18:00:00-04:00",
-            "endTime": "2022-07-02T06:00:00-04:00",
-            "temperature": 53,
-            "temperatureUnit": "F",
-            "icon": "https://api.weather.gov/icons/land/night/skc?size=medium"
-        },
-        {
-            "number": 5,
-            "name": "Saturday",
-            "startTime": "2022-07-02T06:00:00-04:00",
-            "endTime": "2022-07-02T18:00:00-04:00",
-            "temperature": 62,
-            "temperatureUnit": "F",
-            "icon": "https://api.weather.gov/icons/land/day/skc?size=medium"
-        },
-        {
-            "number": 6,
-            "name": "Saturday Night",
-            "startTime": "2022-07-02T18:00:00-04:00",
-            "endTime": "2022-07-03T06:00:00-04:00",
-            "temperature": 52,
-            "temperatureUnit": "F",
-            "icon": "https://api.weather.gov/icons/land/night/skc?size=medium"
-        },
-        {
-            "number": 7,
-            "name": "Sunday",
-            "startTime": "2022-07-03T06:00:00-04:00",
-            "endTime": "2022-07-03T18:00:00-04:00",
-            "temperature": 63,
-            "temperatureUnit": "F",
-            "icon": "https://api.weather.gov/icons/land/day/skc?size=medium"
-        },
-        {
-            "number": 8,
-            "name": "Sunday Night",
-            "startTime": "2022-07-03T18:00:00-04:00",
-            "endTime": "2022-07-04T06:00:00-04:00",
-            "temperature": 51,
-            "temperatureUnit": "F",
-            "icon": "https://api.weather.gov/icons/land/night/skc?size=medium"
-        }
+  "lat": 1.2345,
+  "lon": -5.6789,
+  "timezone": "America/New_York",
+  "timezone_offset": -14400,
+  "current": {
+    "dt": 1754153768,
+    "sunrise": 1754128425,
+    "sunset": 1754179821,
+    "temp": 77.41,
+    "feels_like": 77.02,
+    "pressure": 1023,
+    "humidity": 46,
+    "dew_point": 55.04,
+    "uvi": 8.46,
+    "clouds": 75,
+    "visibility": 10000,
+    "wind_speed": 11.5,
+    "wind_deg": 70,
+    "weather": [
+      {
+        "id": 803,
+        "main": "Clouds",
+        "description": "broken clouds",
+        "icon": "04d"
+      }
     ]
+  },
+  "daily": [
+    {
+      "dt": 1754154000,
+      "sunrise": 1754128425,
+      "sunset": 1754179821,
+      "moonrise": 1754161260,
+      "moonset": 0,
+      "moon_phase": 0.28,
+      "summary": "Expect a day of partly cloudy with clear spells",
+      "temp": {
+        "day": 77.41,
+        "min": 60.4,
+        "max": 77.86,
+        "night": 67.14,
+        "eve": 74.01,
+        "morn": 63.25
+      },
+      "feels_like": {
+        "day": 77.02,
+        "night": 65.86,
+        "eve": 73.13,
+        "morn": 63.12
+      },
+      "pressure": 1023,
+      "humidity": 46,
+      "dew_point": 55.04,
+      "wind_speed": 12.21,
+      "wind_deg": 166,
+      "wind_gust": 17.34,
+      "weather": [
+        {
+          "id": 803,
+          "main": "Clouds",
+          "description": "broken clouds",
+          "icon": "04d"
+        }
+      ],
+      "clouds": 75,
+      "pop": 0,
+      "uvi": 8.46
+    },
+    {
+      "dt": 1754240400,
+      "sunrise": 1754214883,
+      "sunset": 1754266155,
+      "moonrise": 1754251440,
+      "moonset": 1754194620,
+      "moon_phase": 0.32,
+      "summary": "There will be partly cloudy until morning, then clearing",
+      "temp": {
+        "day": 80.47,
+        "min": 65.48,
+        "max": 80.47,
+        "night": 73.74,
+        "eve": 76.33,
+        "morn": 70.09
+      },
+      "feels_like": {
+        "day": 79.77,
+        "night": 73.4,
+        "eve": 76.01,
+        "morn": 69.15
+      },
+      "pressure": 1021,
+      "humidity": 34,
+      "dew_point": 48.2,
+      "wind_speed": 12.08,
+      "wind_deg": 161,
+      "wind_gust": 10.94,
+      "weather": [
+        {
+          "id": 800,
+          "main": "Clear",
+          "description": "clear sky",
+          "icon": "01d"
+        }
+      ],
+      "clouds": 0,
+      "pop": 0,
+      "uvi": 8.1
+    },
+    {
+      "dt": 1754326800,
+      "sunrise": 1754301342,
+      "sunset": 1754352488,
+      "moonrise": 1754341500,
+      "moonset": 1754283240,
+      "moon_phase": 0.35,
+      "summary": "Expect a day of partly cloudy with clear spells",
+      "temp": {
+        "day": 83.52,
+        "min": 71.04,
+        "max": 83.95,
+        "night": 75.76,
+        "eve": 77.86,
+        "morn": 71.42
+      },
+      "feels_like": {
+        "day": 82.15,
+        "night": 75.67,
+        "eve": 77.76,
+        "morn": 70.9
+      },
+      "pressure": 1022,
+      "humidity": 35,
+      "dew_point": 51.67,
+      "wind_speed": 13.53,
+      "wind_deg": 160,
+      "wind_gust": 12.73,
+      "weather": [
+        {
+          "id": 802,
+          "main": "Clouds",
+          "description": "scattered clouds",
+          "icon": "03d"
+        }
+      ],
+      "clouds": 38,
+      "pop": 0,
+      "uvi": 7.66
+    },
+    {
+      "dt": 1754413200,
+      "sunrise": 1754387801,
+      "sunset": 1754438818,
+      "moonrise": 1754431260,
+      "moonset": 1754372460,
+      "moon_phase": 0.38,
+      "summary": "There will be partly cloudy today",
+      "temp": {
+        "day": 82.13,
+        "min": 74.08,
+        "max": 82.76,
+        "night": 75.49,
+        "eve": 77.59,
+        "morn": 74.73
+      },
+      "feels_like": {
+        "day": 81.81,
+        "night": 74.95,
+        "eve": 77.04,
+        "morn": 74.39
+      },
+      "pressure": 1027,
+      "humidity": 42,
+      "dew_point": 55.6,
+      "wind_speed": 11.43,
+      "wind_deg": 138,
+      "wind_gust": 13.44,
+      "weather": [
+        {
+          "id": 804,
+          "main": "Clouds",
+          "description": "overcast clouds",
+          "icon": "04d"
+        }
+      ],
+      "clouds": 100,
+      "pop": 0,
+      "uvi": 7.63
+    },
+    {
+      "dt": 1754499600,
+      "sunrise": 1754474260,
+      "sunset": 1754525148,
+      "moonrise": 1754520480,
+      "moonset": 1754462220,
+      "moon_phase": 0.41,
+      "summary": "There will be partly cloudy today",
+      "temp": {
+        "day": 82.63,
+        "min": 72.84,
+        "max": 82.63,
+        "night": 75.88,
+        "eve": 76.91,
+        "morn": 73.96
+      },
+      "feels_like": {
+        "day": 82.26,
+        "night": 75.85,
+        "eve": 76.89,
+        "morn": 73.69
+      },
+      "pressure": 1028,
+      "humidity": 42,
+      "dew_point": 55.99,
+      "wind_speed": 10.78,
+      "wind_deg": 160,
+      "wind_gust": 11.27,
+      "weather": [
+        {
+          "id": 803,
+          "main": "Clouds",
+          "description": "broken clouds",
+          "icon": "04d"
+        }
+      ],
+      "clouds": 82,
+      "pop": 0,
+      "uvi": 0.88
+    },
+    {
+      "dt": 1754586000,
+      "sunrise": 1754560719,
+      "sunset": 1754611476,
+      "moonrise": 1754609340,
+      "moonset": 1754552520,
+      "moon_phase": 0.44,
+      "summary": "There will be partly cloudy today",
+      "temp": {
+        "day": 79.83,
+        "min": 73.74,
+        "max": 79.83,
+        "night": 73.74,
+        "eve": 75.18,
+        "morn": 74.79
+      },
+      "feels_like": {
+        "day": 79.83,
+        "night": 73.72,
+        "eve": 75.07,
+        "morn": 74.88
+      },
+      "pressure": 1027,
+      "humidity": 53,
+      "dew_point": 60.62,
+      "wind_speed": 11.61,
+      "wind_deg": 153,
+      "wind_gust": 12.5,
+      "weather": [
+        {
+          "id": 804,
+          "main": "Clouds",
+          "description": "overcast clouds",
+          "icon": "04d"
+        }
+      ],
+      "clouds": 100,
+      "pop": 0,
+      "uvi": 1
+    },
+    {
+      "dt": 1754672400,
+      "sunrise": 1754647178,
+      "sunset": 1754697803,
+      "moonrise": 1754697720,
+      "moonset": 1754643060,
+      "moon_phase": 0.48,
+      "summary": "You can expect partly cloudy in the morning, with clearing in the afternoon",
+      "temp": {
+        "day": 80.46,
+        "min": 72.84,
+        "max": 80.46,
+        "night": 75,
+        "eve": 75.97,
+        "morn": 73.58
+      },
+      "feels_like": {
+        "day": 80.82,
+        "night": 75.11,
+        "eve": 75.99,
+        "morn": 73.6
+      },
+      "pressure": 1025,
+      "humidity": 46,
+      "dew_point": 57.58,
+      "wind_speed": 12.08,
+      "wind_deg": 169,
+      "wind_gust": 13.44,
+      "weather": [
+        {
+          "id": 804,
+          "main": "Clouds",
+          "description": "overcast clouds",
+          "icon": "04d"
+        }
+      ],
+      "clouds": 86,
+      "pop": 0,
+      "uvi": 1
+    },
+    {
+      "dt": 1754758800,
+      "sunrise": 1754733637,
+      "sunset": 1754784129,
+      "moonrise": 1754785800,
+      "moonset": 1754733840,
+      "moon_phase": 0.5,
+      "summary": "You can expect clear sky in the morning, with partly cloudy in the afternoon",
+      "temp": {
+        "day": 81.57,
+        "min": 72.12,
+        "max": 81.57,
+        "night": 76.89,
+        "eve": 78.1,
+        "morn": 73.56
+      },
+      "feels_like": {
+        "day": 82.18,
+        "night": 76.82,
+        "eve": 78.24,
+        "morn": 73.58
+      },
+      "pressure": 1023,
+      "humidity": 49,
+      "dew_point": 60.03,
+      "wind_speed": 15.75,
+      "wind_deg": 161,
+      "wind_gust": 19.06,
+      "weather": [
+        {
+          "id": 800,
+          "main": "Clear",
+          "description": "clear sky",
+          "icon": "01d"
+        }
+      ],
+      "clouds": 0,
+      "pop": 0,
+      "uvi": 1
+    }
+  ]
 }

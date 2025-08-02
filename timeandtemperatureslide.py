@@ -8,16 +8,14 @@ from PIL import Image, ImageDraw  # type: ignore
 
 from abstractslide import AbstractSlide, SlideType
 from deps import Dependencies
-from drawing import (RED, WHITE, YELLOW, Align, draw_glyph_by_name,
-                     draw_string)
+from drawing import RED, WHITE, YELLOW, Align, draw_glyph_by_name, draw_string
 from glyphs import GlyphSet
 from requester import Endpoint
 from timesource import TimeSource
 from timeutils import min_datetime_in_local_timezone
-from weatherutils import (NWS_HEADERS, celsius_to_fahrenheit,
-                          icon_url_to_weather_glyph)
+from weatherutils import openweather_object_to_weather_glyph
 
-_OBSERVATIONS_REFRESH_INTERVAL = datetime.timedelta(minutes=5)
+_OBSERVATIONS_REFRESH_INTERVAL = datetime.timedelta(minutes=15)
 _OBSERVATIONS_STALENESS_THRESHOLD = datetime.timedelta(hours=3)
 
 
@@ -43,15 +41,20 @@ class TimeAndTemperatureSlide(AbstractSlide):
             self.time_source)
         self.current_aqi = None
 
-        observations_offices = options.get("observations_offices", ["KBOS"])
-        for office in observations_offices:
+        openweather_api_key = options.get("openweather_api_key", "")
+        weather_lat = options.get("weather_lat", "")
+        weather_lng = options.get("weather_lng", "")
+        if openweather_api_key and weather_lat and weather_lng:
             deps.get_requester().add_endpoint(Endpoint(
-                name=("weather_observations_%s" % office),
-                url="https://api.weather.gov/stations/%s/observations/latest" % office,
+                name=("weather_current"),
+                url="https://api.openweathermap.org/data/3.0/onecall?lat=%s&lon=%s&exclude=minutely,hourly,daily,alerts&units=imperial&appid=%s" % (
+                    weather_lat,
+                    weather_lng,
+                    openweather_api_key,
+                ),
                 refresh_interval=_OBSERVATIONS_REFRESH_INTERVAL,
                 parse_callback=self._parse_observations,
                 error_callback=self._handle_observations_error,
-                headers=NWS_HEADERS,
             ))
 
         airnow_zip_code = options.get("airnow_zip_code", "")
@@ -71,47 +74,17 @@ class TimeAndTemperatureSlide(AbstractSlide):
             data = response.json()
         except JSONDecodeError:
             logging.warning(
-                "Failed to decode observations JSON: %s", response.content)
+                "Failed to decode current weather JSON: %s", response.content)
             return False
 
-        if not "temperature" in data or data["temperature"]["value"] is None:
-            logging.debug("Observations contain null temperature")
+        if not "current" in data or not "temp" in data["current"]:
+            logging.debug("Current weather is not present")
             return False
 
-        # Get the time at which the observations were reported. This can be a long
-        # time in the past even if the request itself is fresh.
-        try:
-            reported_time = datetime.datetime.fromisoformat(data["timestamp"])
-        except ValueError:
-            logging.warning(
-                "Could not parse observations report time %s", data["timestamp"])
-            return False
-
-        observations_time_delta = self.time_source.now() - reported_time
-        if observations_time_delta > _OBSERVATIONS_STALENESS_THRESHOLD:
-            logging.warning(
-                "Received already stale observations (%s old)", observations_time_delta)
-            return False
-
-        # If we request from multiple offices, one might report newer results.
-        if reported_time <= self.last_observations_retrieval:
-            logging.debug("Newer observations already exist. Reported: %s, known %s",
-                          reported_time, self.last_observations_retrieval)
-            return False
-
-        # Assign all values at end in case an error returns otherwise.
-        self.last_observations_retrieval = reported_time
-        self.current_temp = int(
-            celsius_to_fahrenheit(data["temperature"]["value"]))
-
-        self.current_icon = None
-        if "icon" in data and data["icon"] is not None:
-            icon_url = data["icon"]
-            if isinstance(icon_url, str):
-                self.current_icon = icon_url_to_weather_glyph(data["icon"])
-            else:
-                logging.warning(
-                    "Got icon url that wasn't a string: %s", icon_url)
+        self.last_observations_retrieval = self.time_source.now()
+        self.current_temp = data["current"]["temp"]
+        self.current_icon = openweather_object_to_weather_glyph(
+            data["current"])
 
         return True
 

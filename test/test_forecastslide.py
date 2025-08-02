@@ -6,9 +6,11 @@ from dateutil import tz
 from forecastslide import ForecastSlide
 
 _DEFAULT_CONFIG = {
-    "forecast_office": "TEST_F",
+    "weather_lat": "1.2345",
+    "weather_lng": "-5.6789",
+    "openweather_api_key": "OW-API-KEY",
 }
-_DEFAULT_FORECAST_URL = "https://api.weather.gov/gridpoints/TEST_F/forecast"
+_DEFAULT_FORECAST_URL = "https://api.openweathermap.org/data/3.0/onecall?lat=1.2345&lon=-5.6789&exclude=current,minutely,hourly,alerts&units=imperial&appid=OW-API-KEY"
 
 
 class ForecastSlideTest(SlideTest):
@@ -18,21 +20,8 @@ class ForecastSlideTest(SlideTest):
         self.slide = ForecastSlide(self.deps, _DEFAULT_CONFIG)
 
         self.test_datetime = datetime.datetime(
-            2022, 6, 30, 15, 31, 0, 0, tz.gettz("America/New_York"))
+            2025, 8, 2, 15, 31, 0, 0, tz.gettz("America/New_York"))
         self.deps.time_source.set(self.test_datetime)
-
-    def test_evening(self) -> None:
-        self.test_datetime = datetime.datetime(
-            2022, 5, 23, 19, 31, 0, 0, tz.gettz("America/New_York"))
-        self.deps.time_source.set(self.test_datetime)
-
-        self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
-                                         "forecastslide_evening.json")
-
-        self.deps.get_requester().start()
-
-        self.assertTrue(self.slide.is_enabled())
-        self.assertRenderMatchesGolden(self.slide)
 
     def test_afternoon(self) -> None:
         self.deps.get_requester().expect(_DEFAULT_FORECAST_URL,
