@@ -2,6 +2,7 @@ import datetime
 import inspect
 import unittest
 from typing import Dict, List, Optional
+import logging
 
 import requests
 from google.protobuf import message, text_format  # type: ignore
@@ -105,6 +106,7 @@ class SlideTest(unittest.TestCase):
 
     def setUp(self) -> None:
         super().setUp()
+        logging.basicConfig(level=logging.DEBUG)
         self.deps = TestDependencies()
 
     def assertRendersBlank(self, slide: AbstractSlide) -> None:

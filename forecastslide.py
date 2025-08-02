@@ -2,26 +2,26 @@ import datetime
 import logging
 from dataclasses import dataclass
 from json import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import requests
 from PIL import Image, ImageDraw  # type: ignore
 
-from glyphs import GlyphSet
 from abstractslide import AbstractSlide, SlideType
 from deps import Dependencies
 from drawing import AQUA, GRAY, WHITE, Align, draw_glyph_by_name, draw_string
+from glyphs import GlyphSet
 from requester import Endpoint
 from timesource import TimeSource
-from weatherutils import NWS_HEADERS, icon_url_to_weather_glyph
+from weatherutils import openweather_object_to_weather_glyph
 
-_FORECAST_REFRESH_INTERVAL = datetime.timedelta(minutes=20)
+_FORECAST_REFRESH_INTERVAL = datetime.timedelta(minutes=30)
 _FORECAST_STALENESS_THRESHOLD = datetime.timedelta(hours=6)
 
 
 @dataclass
 class DailyForecast:
-    date: datetime.datetime
+    date: datetime.date
     icon: Optional[str]
     high_temp: Optional[int]
     low_temp: int
@@ -49,15 +49,21 @@ class ForecastSlide(AbstractSlide):
         self.forecasts = list()
         self.display_date_offset = int(options.get("date_offset", "0"))
 
-        forecast_office = options.get("forecast_office", "BOX/69,76")
-        deps.get_requester().add_endpoint(Endpoint(
-            name="weather_forecast",
-            url="https://api.weather.gov/gridpoints/%s/forecast" % forecast_office,
-            refresh_interval=_FORECAST_REFRESH_INTERVAL,
-            parse_callback=self._parse_forecast,
-            error_callback=self._handle_forecast_error,
-            headers=NWS_HEADERS,
-        ))
+        openweather_api_key = options.get("openweather_api_key", "")
+        weather_lat = options.get("weather_lat", "")
+        weather_lng = options.get("weather_lng", "")
+        if openweather_api_key and weather_lat and weather_lng:
+            deps.get_requester().add_endpoint(Endpoint(
+                name=("weather_current_plus%d" % self.display_date_offset),
+                url="https://api.openweathermap.org/data/3.0/onecall?lat=%s&lon=%s&exclude=current,minutely,hourly,alerts&units=imperial&appid=%s" % (
+                    weather_lat,
+                    weather_lng,
+                    openweather_api_key,
+                ),
+                refresh_interval=_FORECAST_REFRESH_INTERVAL,
+                parse_callback=self._parse_forecast,
+                error_callback=self._handle_forecast_error,
+            ))
 
     def _parse_forecast(self, response: requests.models.Response) -> bool:
         try:
@@ -67,87 +73,38 @@ class ForecastSlide(AbstractSlide):
                 "Failed to decode forecast JSON: %s", response.content)
             return False
 
-        try:
-            update_time = datetime.datetime.fromisoformat(data["updateTime"])
-        except ValueError:
-            logging.warning(
-                "Could not parse forecast update time %s", data["updateTime"])
+        if not "daily" in data or len(data["daily"]) == 0:
+            logging.warning("Missing daily forecasts")
             return False
 
-        now = self.time_source.now()
+        forecasts = data["daily"]
 
-        if now - update_time > _FORECAST_STALENESS_THRESHOLD:
-            logging.warning(
-                "Forecast is too old. Update time is %s", update_time)
-            return False
+        forecast0 = self._find_forecast(forecasts, self.display_date_offset)
+        forecast1 = self._find_forecast(
+            forecasts, self.display_date_offset + 1)
 
-        processed_forecasts: List[DailyForecast] = list()
-
-        if now.hour >= 18:
-            # Special-case nightly forecasts if it's evening.
-            forecast_tonight = self._get_forecast_with_end_time(
-                1, 6, data["periods"])
-            if forecast_tonight is None:
-                return False
-            processed_forecasts.insert(0, DailyForecast(
-                date=now,
-                icon=icon_url_to_weather_glyph(forecast_tonight.icon),
-                high_temp=None,
-                low_temp=forecast_tonight.temperature))
+        if forecast0 and forecast1:
+            self.last_forecast_retrieval = self.time_source.now()
+            self.forecasts = [forecast0, forecast1]
+            return True
         else:
-            processed_forecast = self._create_forecast(0, data["periods"])
-            if processed_forecast is None:
-                return False
-            processed_forecasts.insert(0, processed_forecast)
-
-        for i in range(1, int(len(data["periods"])/2)):
-            processed_forecast = self._create_forecast(i, data["periods"])
-            if processed_forecast is None:
-                return False
-            processed_forecasts.insert(i, processed_forecast)
-
-        # The data didn't go far enough to display the requested date offset.
-        if self.display_date_offset+2 > len(processed_forecasts):
             return False
 
-        # Assign all values at end in case an error returns otherwise.
-        self.last_forecast_retrieval = self.time_source.now()
-        self.forecasts = processed_forecasts
-
-        return True
-
-    def _create_forecast(self, date_offset: int, periods: List[Dict[str, Any]]) -> Optional[DailyForecast]:
-        # End times will always be at 6 AM or 6 PM (regardless of time zone).
-        day = self._get_forecast_with_end_time(date_offset, 18, periods)
-        night = self._get_forecast_with_end_time(date_offset+1, 6, periods)
-        if day is None or night is None:
-            return None
-
-        now = self.time_source.now()
-        return DailyForecast(date=now + datetime.timedelta(days=date_offset),
-                             icon=icon_url_to_weather_glyph(day.icon),
-                             high_temp=day.temperature,
-                             low_temp=night.temperature)
-
-    def _get_forecast_with_end_time(self, date_offset: int, hour: int,
-                                    periods: List[Dict[str, Any]]) -> Optional[ForecastPeriod]:
-        now = self.time_source.now()
-        end_time = datetime.datetime(
-            now.year, now.month, now.day, hour, 0, 0, 0) + datetime.timedelta(days=date_offset)
-
-        for period in periods:
-            # Timezone needs to be removed because it can be unpredictable when DST changes.
-            forecast_end_time = datetime.datetime.fromisoformat(
-                period["endTime"]).replace(tzinfo=None)
-            if forecast_end_time == end_time:
-                if period["temperature"] is None:
-                    return None
-                return ForecastPeriod(
-                    icon=period["icon"],
-                    temperature=period["temperature"]
+    def _find_forecast(self, forecasts: List[Any], date_offset: int) -> Optional[DailyForecast]:
+        expected_date = (self.time_source.now() +
+                         datetime.timedelta(days=date_offset)).date()
+        for forecast in forecasts:
+            forecast_date = datetime.datetime.fromtimestamp(
+                forecast["dt"]).date()
+            logging.debug("Comparing %s and %s", forecast_date, expected_date)
+            if forecast_date == expected_date:
+                return DailyForecast(
+                    date=forecast_date,
+                    icon=openweather_object_to_weather_glyph(forecast),
+                    high_temp=int(forecast["temp"]["day"]),
+                    low_temp=int(forecast["temp"]["night"]),
                 )
-        logging.warning(
-            "Could not find forecast with end time %s", end_time)
+        logging.debug("Did not find a forecast with matching date")
         return None
 
     def _handle_forecast_error(self, response: Optional[requests.models.Response]) -> None:
@@ -165,10 +122,8 @@ class ForecastSlide(AbstractSlide):
             return
 
         draw = ImageDraw.Draw(img)
-        self._draw_forecast(
-            draw, 0, 0, self.forecasts[self.display_date_offset])
-        self._draw_forecast(
-            draw, 0, 16, self.forecasts[self.display_date_offset+1])
+        self._draw_forecast(draw, 0, 0, self.forecasts[0])
+        self._draw_forecast(draw, 0, 16, self.forecasts[1])
 
     def _has_valid_data(self) -> bool:
         # Slide should not be shown if we are missing predictions entirely.
