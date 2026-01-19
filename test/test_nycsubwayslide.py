@@ -24,9 +24,9 @@ class NycSubwaySlideTest(SlideTest):
         self.slide = NycSubwaySlide(self.deps, _DEFAULT_CONFIG)
 
     def test_error_response(self) -> None:
-        self.deps.get_requester().expect(_NQRW_URL, "forecastslide_evening.json")
+        self.deps.get_requester().expect(_NQRW_URL, "forecastslide_afternoon.json")
         self.deps.get_requester().start()
-        
+
         self.assertFalse(self.slide.is_enabled())
 
     def test_has_no_departures(self) -> None:
@@ -45,9 +45,7 @@ class NycSubwaySlideTest(SlideTest):
 
     def test_has_departures_two_lines(self) -> None:
         self.deps.get_requester().expect_with_proto_response(
-            _NQRW_URL, "mta_nqrw.textproto", FeedMessage())
-        self.deps.get_requester().expect_with_proto_response(
-            _ACE_URL, "mta_ace.textproto", FeedMessage())
+            _BDFM_URL, "mta_bdfm.textproto", FeedMessage())
         self.deps.get_requester().start()
 
         self.assertTrue(self.slide.is_enabled())
@@ -58,8 +56,6 @@ class NycSubwaySlideTest(SlideTest):
             _NQRW_URL, "mta_nqrw.textproto", FeedMessage())
         self.deps.get_requester().expect_with_proto_response(
             _BDFM_URL, "mta_bdfm.textproto", FeedMessage())
-        self.deps.get_requester().expect_with_proto_response(
-            _ACE_URL, "mta_ace.textproto", FeedMessage())
         self.deps.get_requester().start()
 
         self.assertTrue(self.slide.is_enabled())
