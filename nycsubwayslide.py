@@ -15,7 +15,7 @@ from gtfs_realtime_pb2 import FeedMessage  # type: ignore
 from requester import Endpoint
 from timesource import TimeSource
 
-_REFRESH_INTERVAL = datetime.timedelta(minutes=1)
+_REFRESH_INTERVAL = datetime.timedelta(minutes=2)
 _STALENESS_THRESHOLD = datetime.timedelta(minutes=10)
 _DEPARTURE_LOWER_BOUND = datetime.timedelta(minutes=5)
 _MAX_NUM_PREDICTIONS = 2
