@@ -101,8 +101,8 @@ class ForecastSlide(AbstractSlide):
                 return DailyForecast(
                     date=forecast_date,
                     icon=openweather_object_to_weather_glyph(forecast),
-                    high_temp=int(forecast["temp"]["day"]),
-                    low_temp=int(forecast["temp"]["night"]),
+                    high_temp=int(forecast["temp"]["max"]),
+                    low_temp=int(forecast["temp"]["min"]),
                 )
         logging.debug("Did not find a forecast with matching date")
         return None
