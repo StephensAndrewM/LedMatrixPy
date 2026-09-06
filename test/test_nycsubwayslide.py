@@ -8,11 +8,12 @@ from nycsubwayslide import NycSubwaySlide
 
 _DEFAULT_CONFIG = {
     "mta_api_key": "API-KEY",
+    "mta_bus_api_key": "BUS-API-KEY",
+    "mta_q_stop_id": "D26N",
+    "mta_b41_stop_id": "STOP_REF",
 }
 _NQRW_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw"
-_BDFM_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm"
-_ACE_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace"
-
+_B41_URL = "https://bustime-classic.mta.info/api/siri/stop-monitoring.json?key=BUS-API-KEY&version=2&OperatorRef=MTA&MonitoringRef=STOP_REF"
 
 class NycSubwaySlideTest(SlideTest):
 
@@ -45,17 +46,8 @@ class NycSubwaySlideTest(SlideTest):
 
     def test_has_departures_two_lines(self) -> None:
         self.deps.get_requester().expect_with_proto_response(
-            _BDFM_URL, "mta_bdfm.textproto", FeedMessage())
-        self.deps.get_requester().start()
-
-        self.assertTrue(self.slide.is_enabled())
-        self.assertRenderMatchesGolden(self.slide)
-
-    def test_has_departures_all_lines(self) -> None:
-        self.deps.get_requester().expect_with_proto_response(
-            _NQRW_URL, "mta_nqrw.textproto", FeedMessage())
-        self.deps.get_requester().expect_with_proto_response(
-            _BDFM_URL, "mta_bdfm.textproto", FeedMessage())
+                    _NQRW_URL, "mta_nqrw.textproto", FeedMessage())
+        self.deps.get_requester().expect(_B41_URL, "mta_b41.json")
         self.deps.get_requester().start()
 
         self.assertTrue(self.slide.is_enabled())
